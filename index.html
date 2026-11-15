@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Vinay Kumar Patnaik — Lead Software Engineer</title>
-<meta name="description" content="Lead Software Engineer at Alo Yoga, focused on retail engineering and system design for POS, store fulfillment, inventory and omnichannel systems.">
+<meta name="description" content="Lead Software Engineer at Alo Yoga, leading retail engineering: store POS, omnichannel fulfillment, inventory, pricing and global expansion.">
 <meta name="color-scheme" content="light dark">
 <link rel="canonical" href="https://vinaykumarpatnaik.com/">
 <meta property="og:title" content="Vinay Kumar Patnaik — Lead Software Engineer">
@@ -13,12 +13,6 @@
 <meta property="og:url" content="https://vinaykumarpatnaik.com/">
 <link rel="icon" href="images/avatar.png">
 
-<!-- Proxima Nova is a licensed font served by Adobe Fonts.
-     To switch it on: create a web project at fonts.adobe.com with Proxima Nova
-     (weights 400, 600, 700), add vinaykumarpatnaik.com as a domain, and paste the
-     kit's stylesheet link below in place of KIT_ID.
-     Until then, the page falls back to Figtree, the closest free match. -->
-<!-- <link rel="stylesheet" href="https://use.typekit.net/KIT_ID.css"> -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap">
@@ -29,7 +23,7 @@
     --hair:#d2d2d7; --link:#0066cc; --cta:#0071e3; --cta-hover:#0077ed;
     --night:#000000; --night-ink:#f5f5f7; --night-muted:#a1a1a6; --night-line:#424245;
     --nav:rgba(251,251,253,.72); --nav-line:rgba(0,0,0,.08); --tag:rgba(0,113,227,.1);
-    --font:"proxima-nova","Proxima Nova","Figtree",-apple-system,BlinkMacSystemFont,"Helvetica Neue",Helvetica,Arial,sans-serif;
+    --font:"Figtree",-apple-system,BlinkMacSystemFont,"Helvetica Neue",Helvetica,Arial,sans-serif;
   }
   @media (prefers-color-scheme:dark){
     :root{
@@ -94,7 +88,7 @@
   @media (prefers-color-scheme:dark){.tile.night{box-shadow:inset 0 0 0 1px var(--night-line)}}
   .tile.night p{color:var(--night-muted);max-width:60ch}
   .tile.night h3{font-size:clamp(32px,4.6vw,48px);line-height:1.05;max-width:15ch;margin-bottom:16px}
-  .stat{font-size:72px;font-weight:800;letter-spacing:-0.05em;line-height:1;margin-bottom:12px}
+  .stat{font-size:clamp(56px,7vw,80px);font-weight:800;letter-spacing:-0.05em;line-height:1;margin-bottom:20px;color:var(--link)}
   .tile.stat-tile{justify-content:flex-end}
 
   /* omnichannel diagram */
@@ -184,7 +178,7 @@
     <img class="avatar" src="images/avatar.png" width="152" height="152" alt="Portrait of Vinay Kumar Patnaik">
     <p class="role">Lead Software Engineer at Alo Yoga</p>
     <h1>I design and build retail systems.</h1>
-    <p class="sub">Checkout, store fulfillment, inventory and orders, built to work across every channel and every country.</p>
+    <p class="sub">Store point of sale, omnichannel fulfillment, inventory and pricing for Alo Yoga, built to scale across countries.</p>
     <div class="ctas">
       <a class="btn btn-primary" href="mailto:vinaykumarpatnaik@gmail.com">Get in touch</a>
       <a class="btn btn-ghost" href="#experience">See my experience</a>
@@ -193,37 +187,39 @@
 
   <section id="work" class="wrap" aria-labelledby="work-h">
     <h2 id="work-h">What I work on</h2>
-    <p class="lede">I lead core retail engineering at Alo Yoga and own the system design for our retail systems.</p>
+    <p class="lede">I lead retail engineering at Alo Yoga and own the design of the systems our stores run on.</p>
 
     <div class="grid">
       <article class="tile night s6">
-        <h3>Retail systems for every channel and every country.</h3>
-        <p>I design the systems behind Alo's international omnichannel expansion, so stores, POS and online share the same inventory, pricing and orders across regions, currencies and languages.</p>
+        <h3>One store, every way to shop.</h3>
+        <p>I lead the point-of-sale systems in Alo's stores and the omnichannel services that connect those stores with online customers. Same-day delivery, buy online pick up in store, ship from store and ship to store all run through them, in the US and internationally.</p>
         <div class="omni" aria-hidden="true">
-          <div class="chans left"><span class="chan">Retail stores</span><span class="chan">Point of sale</span></div>
-          <div class="core">Shared services<small>Inventory, pricing<br>and orders</small></div>
-          <div class="chans right"><span class="chan">Online store</span><span class="chan">International sites</span></div>
+          <div class="chans left"><span class="chan">Store point of sale</span><span class="chan">Store inventory</span></div>
+          <div class="core">Omnichannel services<small>Connecting online<br>and store customers</small></div>
+          <div class="chans right"><span class="chan">Same-day delivery</span><span class="chan">Pick up in store</span><span class="chan">Ship from and to store</span></div>
         </div>
       </article>
 
-      <article class="tile stat-tile s2">
-        <div class="stat">4+</div>
-        <p>years building retail, POS and data systems</p>
-      </article>
-
-      <article class="tile s4">
-        <h3>Point of sale and store fulfillment</h3>
-        <p>Checkout, payments and returns, store fulfillment that links online orders to store inventory, and the technical side of Alo's customer loyalty program.</p>
+      <article class="tile s3">
+        <div class="stat">2 min</div>
+        <h3>Pricing for all of Alo</h3>
+        <p>Every Alo price, online and in store, goes through a service I built. Uploads used to take 45 minutes per country; with multithreading and semaphore-based concurrency, 12 countries now finish in 2 minutes.</p>
       </article>
 
       <article class="tile s3">
-        <h3>Retail monolith to microservices</h3>
-        <p>Breaking our retail repositories into domain-based services, each with its own API contract and pipeline, so each one ships on its own.</p>
+        <div class="stat">~8</div>
+        <h3>Countries in one fiscal year</h3>
+        <p>I lead the engineering side of Alo's global retail expansion, bringing store technology and international omnichannel to nearly eight new countries on a tight timeline.</p>
       </article>
 
       <article class="tile s3">
-        <h3>The infrastructure underneath</h3>
-        <p>I also run the supporting AWS VPC and infrastructure in Terraform, with reusable modules and matching dev, staging and prod.</p>
+        <h3>Retail inventory, in and out</h3>
+        <p>I own retail inventory management, including every inbound and outbound flow to our stores.</p>
+      </article>
+
+      <article class="tile s3">
+        <h3>Built to scale</h3>
+        <p>I'm breaking our retail monolith into independently deployable microservices, running on AWS infrastructure we manage in Terraform.</p>
       </article>
     </div>
   </section>
@@ -238,11 +234,12 @@
           <h3>Lead Software Engineer</h3>
           <div class="org">Alo Yoga, San Ramon, CA</div>
           <ul>
-            <li>Lead core retail engineering and own system design for Alo's retail systems: POS, store fulfillment, inventory, orders and loyalty.</li>
-            <li>Design the retail systems behind the international omnichannel expansion across regions, currencies and languages.</li>
-            <li>Breaking monolithic retail repositories into independently deployable microservices.</li>
-            <li>Run the supporting AWS VPC and infrastructure in Terraform.</li>
-            <li>Set design standards and run design reviews for retail engineering, and mentor engineers.</li>
+            <li>Lead retail engineering for Alo's stores: point of sale, plus omnichannel services for same-day delivery, buy online pick up in store, ship from store and ship to store.</li>
+            <li>Lead the engineering side of Alo's global retail expansion, launching store technology and international omnichannel in nearly eight countries in one fiscal year.</li>
+            <li>Built and own the pricing service behind every Alo price, online and in store. Multithreading and semaphores cut uploads from 45 minutes per country to 2 minutes for 12 countries.</li>
+            <li>Own retail inventory management, including all inbound and outbound flows to stores.</li>
+            <li>Own system design for retail systems and lead the move to microservices on Terraform-managed AWS.</li>
+            <li>Set design standards, run design reviews and mentor engineers.</li>
           </ul>
         </div>
       </li>
@@ -288,8 +285,8 @@
     <h2 id="skills-h">Skills</h2>
     <p class="lede">The tools and ideas I use most.</p>
     <div class="skills">
-      <div><h3>Retail engineering</h3><ul><li>Point of sale</li><li>Store fulfillment</li><li>Omnichannel retail</li><li>Order and inventory management</li><li>Payments and loyalty</li><li>International commerce</li></ul></div>
-      <div><h3>System design</h3><ul><li>Retail systems architecture</li><li>Microservices</li><li>Domain-driven design</li><li>Event-driven systems</li><li>REST APIs</li></ul></div>
+      <div><h3>Retail engineering</h3><ul><li>Point of sale</li><li>Omnichannel fulfillment</li><li>Pricing</li><li>Inventory, inbound and outbound</li><li>Loyalty</li><li>Global retail expansion</li></ul></div>
+      <div><h3>System design</h3><ul><li>Retail systems architecture</li><li>Microservices</li><li>Concurrency and multithreading</li><li>Event-driven systems</li><li>REST APIs</li></ul></div>
       <div><h3>Infrastructure</h3><ul><li>Terraform</li><li>AWS VPC, IAM and networking</li><li>CI/CD</li><li>Docker</li><li>Multi-deployable services</li></ul></div>
       <div><h3>Languages</h3><ul><li>Java and Spring Boot</li><li>Python and Flask</li><li>JavaScript</li><li>SQL</li></ul></div>
       <div><h3>Data</h3><ul><li>Relational and NoSQL databases</li><li>Data modeling</li><li>Statistical analysis</li><li>TensorFlow and scikit-learn</li><li>Tableau and Power BI</li></ul></div>
