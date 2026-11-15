@@ -1,609 +1,308 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>Vinay Kumar Patnaik's Portfolio</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    
-    <link href="https://fonts.googleapis.com/css?family=Poppins:100,200,300,400,500,600,700,800,900" rel="stylesheet">
-
-    <link rel="stylesheet" href="css/open-iconic-bootstrap.min.css">
-    <link rel="stylesheet" href="css/animate.css">
-    
-    <link rel="stylesheet" href="css/owl.carousel.min.css">
-    <link rel="stylesheet" href="css/owl.theme.default.min.css">
-    <link rel="stylesheet" href="css/magnific-popup.css">
-
-    <link rel="stylesheet" href="css/aos.css">
-
-    <link rel="stylesheet" href="css/ionicons.min.css">
-    
-    <link rel="stylesheet" href="css/flaticon.css">
-    <link rel="stylesheet" href="css/icomoon.css">
-    <link rel="stylesheet" href="css/style.css">
-
-
-
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vinay Kumar Patnaik — Lead Software Engineer</title>
+<meta name="description" content="Lead Software Engineer at Alo Yoga, focused on retail engineering and system design for POS, store, inventory and omnichannel systems.">
 <style>
-
-/*======================================
-//--//-->   ABOUT
-======================================*/
-
-.about-mf .box-shadow-full {
-  padding-top: 4rem;
-  padding-bottom: 4rem;
-}
-
-.about-mf .about-img {
-  margin-bottom: 2rem;
-}
-
-.about-mf .about-img img {
-  margin-left: 10px;
-}
-
-
-.skill-mf .progress {
-  /* background-color: #cde1f8; */
-  margin: .5rem 0 1.2rem 0;
-  border-radius: 0;
-  height: .7rem;
-}
-
-.skill-mf .progress .progress-bar {
-  height: .7rem;
-  background-color: #041E42;
-}
-
-
-/* Animation styles */
-#typing-animation {
-  position: relative;
-  font-size: 30px;
-  font-weight: bold;
-  color: #041E42;
-  overflow: hidden;
-  white-space: nowrap;
-  animation: typing 3s steps(20, end) infinite;
-}
-
-#typing-animation:before {
-  content: "";
-  /* position: absolute; */
-  top: 0;
-  left: 0;
-  width: 0;
-  height: 100%;
-  background-color: #041E42;
-  animation: typing-cursor 0.5s ease-in-out infinite;
-}
-
-@keyframes typing {
-  from {
-    width: 0;
+  :root{
+    --canvas:#fbfbfd; --surface:#ffffff; --ink:#1d1d1f; --muted:#6e6e73;
+    --hair:#d2d2d7; --link:#0066cc; --night:#000000; --night-2:#1d1d1f;
+    --radius-xl:28px; --radius-md:18px;
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
   }
-  to {
-    width: 100%;
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+  body{background:var(--canvas);color:var(--ink);font-family:var(--font);font-size:17px;line-height:1.47;letter-spacing:-0.022em;-webkit-font-smoothing:antialiased}
+  a{color:var(--link);text-decoration:none}
+  a:hover{text-decoration:underline}
+  :focus-visible{outline:3px solid #0071e3;outline-offset:3px;border-radius:6px}
+  .wrap{max-width:980px;margin:0 auto;padding-inline:22px}
+
+  /* nav */
+  nav{position:sticky;top:0;z-index:10;background:rgba(251,251,253,.72);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid rgba(0,0,0,.08)}
+  nav .wrap{display:flex;align-items:center;justify-content:space-between;height:48px}
+  nav .me{font-weight:600;font-size:15px;color:var(--ink)}
+  nav ul{display:flex;gap:28px;list-style:none}
+  nav ul a{color:var(--ink);opacity:.8;font-size:13px}
+  nav ul a:hover{opacity:1;text-decoration:none}
+
+  /* hero */
+  .hero{text-align:center;padding-block:120px 96px}
+  .avatar{display:block;width:160px;height:160px;border-radius:50%;margin:0 auto 28px}
+  .hero .role{font-size:21px;font-weight:600;color:var(--muted);margin-bottom:14px}
+  .hero h1{font-size:clamp(44px,8vw,80px);line-height:1.05;letter-spacing:-0.035em;font-weight:700;max-width:13ch;margin:0 auto}
+  .hero p{font-size:clamp(19px,2.4vw,24px);line-height:1.38;color:var(--muted);max-width:34ch;margin:24px auto 0;letter-spacing:-0.01em}
+  .hero .ctas{margin-top:36px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+  .btn{display:inline-block;padding:12px 22px;border-radius:980px;font-size:17px}
+  .btn-primary{background:#0071e3;color:#fff}
+  .btn-primary:hover{background:#0077ed;text-decoration:none}
+  .btn-ghost{color:var(--link);border:1px solid var(--link)}
+  .btn-ghost:hover{text-decoration:none;background:rgba(0,102,204,.06)}
+  @media (prefers-reduced-motion:no-preference){
+    .hero > *{opacity:0;transform:translateY(14px);animation:rise .9s cubic-bezier(.2,.7,.2,1) forwards}
+    .hero > :nth-child(2){animation-delay:.08s}
+    .hero > :nth-child(3){animation-delay:.18s}
+    .hero > :nth-child(4){animation-delay:.28s}
+    .hero > :nth-child(5){animation-delay:.36s}
+    @keyframes rise{to{opacity:1;transform:none}}
   }
-}
 
-@keyframes typing-cursor {
-  from {
-    width: 5px;
+  section{padding-block:88px}
+  h2{font-size:clamp(32px,5vw,48px);line-height:1.08;letter-spacing:-0.03em;font-weight:700;margin-bottom:12px}
+  .lede{font-size:21px;color:var(--muted);max-width:40ch;margin-bottom:48px;line-height:1.38}
+
+  /* focus grid */
+  .grid{display:grid;grid-template-columns:repeat(6,1fr);gap:20px}
+  .tile{background:var(--surface);border-radius:var(--radius-xl);padding:40px;min-height:260px;display:flex;flex-direction:column}
+  .tile h3{font-size:28px;line-height:1.14;letter-spacing:-0.025em;font-weight:700;margin-bottom:10px}
+  .tile p{color:var(--muted);font-size:17px}
+  .tile.span-6{grid-column:span 6}
+  .tile.span-3{grid-column:span 3}
+  .tile.span-2{grid-column:span 2}
+  .tile.span-4{grid-column:span 4}
+  .tile.night{background:var(--night);color:#f5f5f7}
+  .tile.night p{color:#a1a1a6}
+  .tile.night h3{font-size:clamp(32px,4.4vw,44px);max-width:16ch}
+
+  /* omnichannel diagram */
+  .omni{margin-top:auto;padding-top:44px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:0}
+  .chans{display:flex;flex-direction:column;gap:12px}
+  .chan{border:1px solid #424245;border-radius:980px;padding:9px 18px;font-size:15px;color:#f5f5f7;text-align:center;white-space:nowrap}
+  .core{width:190px;height:190px;padding:20px;border-radius:50%;margin:0 28px;display:grid;place-items:center;text-align:center;font-size:15px;font-weight:600;color:#fff;
+    background:radial-gradient(circle at 30% 25%, #2997ff 0%, #0071e3 45%, #003e9e 100%);box-shadow:0 0 80px rgba(41,151,255,.35)}
+  .core small{display:block;font-weight:400;color:rgba(255,255,255,.75);font-size:13px;margin-top:4px}
+  .links{position:relative;height:1px}
+  .chans.left .chan{position:relative}
+  .chans.left .chan::after,.chans.right .chan::before{content:"";position:absolute;top:50%;width:28px;height:1px;background:#424245}
+  .chans.left .chan::after{right:-29px}
+  .chans.right .chan{position:relative}
+  .chans.right .chan::before{left:-29px}
+
+  .stat{font-size:56px;font-weight:700;letter-spacing:-0.04em;line-height:1;margin-bottom:8px}
+
+  /* experience */
+  .timeline{list-style:none;border-top:1px solid var(--hair)}
+  .job{display:grid;grid-template-columns:200px 1fr;gap:32px;padding:36px 0;border-bottom:1px solid var(--hair)}
+  .job .when{color:var(--muted);font-size:15px;padding-top:4px}
+  .job h3{font-size:24px;letter-spacing:-0.02em;font-weight:600}
+  .job .org{color:var(--muted);margin-bottom:14px}
+  .job ul{padding-left:1.1em;color:#424245}
+  .job li{margin:6px 0;max-width:68ch}
+  .job.current h3::after{content:"Current";font-size:12px;font-weight:600;color:#0071e3;background:rgba(0,113,227,.1);padding:3px 9px;border-radius:980px;margin-left:10px;vertical-align:4px;letter-spacing:0}
+
+  /* skills */
+  .skills{display:grid;grid-template-columns:repeat(3,1fr);gap:40px 32px}
+  .skills h3{font-size:19px;font-weight:600;margin-bottom:10px}
+  .skills ul{list-style:none;color:var(--muted)}
+  .skills li{padding:3px 0}
+
+  /* projects + education */
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .card{background:var(--surface);border-radius:var(--radius-md);padding:32px}
+  .card h3{font-size:21px;font-weight:600;letter-spacing:-0.02em;margin-bottom:6px}
+  .card .meta{color:var(--muted);font-size:15px;margin-bottom:12px}
+  .card p{color:#424245}
+
+  footer{padding-block:96px 64px;text-align:center}
+  footer h2{margin-bottom:16px}
+  footer p{color:var(--muted);font-size:21px;margin-bottom:32px}
+  .fine{margin-top:72px;font-size:12px;color:var(--muted);border-top:1px solid var(--hair);padding-top:18px}
+
+  @media (max-width:820px){
+    nav ul{gap:18px}
+    .tile.span-3,.tile.span-2,.tile.span-4{grid-column:span 6}
+    .tile{padding:32px;min-height:0}
+    .job{grid-template-columns:1fr;gap:6px}
+    .skills{grid-template-columns:1fr 1fr}
+    .pair{grid-template-columns:1fr}
+    .omni{grid-template-columns:1fr;justify-items:center;gap:24px}
+    .chans{flex-direction:row;flex-wrap:wrap;justify-content:center}
+    .chans.left .chan::after,.chans.right .chan::before{display:none}
+    .core{margin:0}
   }
-  to {
-    width: 0;
+  @media (max-width:520px){
+    nav ul li:nth-child(n+3){display:none}
+    .skills{grid-template-columns:1fr}
+    .hero{padding-block:88px 64px}
+    section{padding-block:64px}
   }
-}
-
-
-/* project image zoom effect */
-
-.zoom-effect {
-  overflow: hidden;
-  transition: transform 0.3s ease-out;
-}
-
-.zoom-effect:hover {
-  transform: scale(1.1);
-}
-
-
 </style>
+</head>
+<body>
 
+<nav aria-label="Main">
+  <div class="wrap">
+    <a class="me" href="#top">Vinay Kumar Patnaik</a>
+    <ul>
+      <li><a href="#work">Work</a></li>
+      <li><a href="#experience">Experience</a></li>
+      <li><a href="#skills">Skills</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </div>
+</nav>
 
-  </head>
-  <body data-spy="scroll" data-target=".site-navbar-target" data-offset="300" style="background-color: lightblue;">
-	  
-	  
-    <nav class="navbar navbar-expand-lg navbar-light ftco_navbar ftco-navbar-light site-navbar-target" id="ftco-navbar">
-	    <div class="container">
-	      <a class="navbar-brand" href="index.html">Vinay Kumar Patnaik</a>
-	      <button class="navbar-toggler js-fh5co-nav-toggle fh5co-nav-toggle" type="button" data-toggle="collapse" data-target="#ftco-nav" aria-controls="ftco-nav" aria-expanded="false" aria-label="Toggle navigation">
-	        <span class="oi oi-menu"></span> Menu
-	      </button>
+<main id="top">
+  <header class="hero wrap">
+    <img class="avatar" src="images/avatar.png" width="160" height="160" alt="Portrait of Vinay Kumar Patnaik">
+    <p class="role">Lead Software Engineer at Alo Yoga</p>
+    <h1>I design and build retail systems.</h1>
+    <p>Checkout, inventory and orders for stores and online, designed to scale across countries.</p>
+    <div class="ctas">
+      <a class="btn btn-primary" href="mailto:vinaykumarpatnaik@gmail.com">Get in touch</a>
+      <a class="btn btn-ghost" href="#experience">See my experience</a>
+    </div>
+  </header>
 
-	      <div class="collapse navbar-collapse" id="ftco-nav">
-	        <ul class="navbar-nav nav ml-auto">
-	          <li class="nav-item"><a href="#home-section" class="nav-link"><span>Home</span></a></li>
-	          <li class="nav-item"><a href="#about-section" class="nav-link"><span>About</span></a></li>
-	          <li class="nav-item"><a href="#resume-section" class="nav-link"><span>Resume</span></a></li>
-	          <li class="nav-item"><a href="#project-section" class="nav-link"><span>Projects</span></a></li>
-	          <li class="nav-item"><a href="#contact-section" class="nav-link"><span>Contact</span></a></li>
-	        </ul>
-	      </div>
-	    </div>
-	</nav>
-	  <section id="home-section" class="hero">
-		  <div class="home-slider  owl-carousel">
-	       <div class="slider-item ">
-	      	<div class="overlay"></div>
-	         <div class="container">
-	          <div class="row d-md-flex no-gutters slider-text align-items-end justify-content-end" data-scrollax-parent="true">
-	          	<div class="one-third js-fullheight order-md-last img" style="background-image:url(images/Vinay-Main.png);">
-	          	 <div class="overlay"></div>
-	          	</div>
-		          <div class="one-forth d-flex  align-items-center ftco-animate" data-scrollax=" properties: { translateY: '70%' }">
-		          	<div class="text">
-		          		<span class="subheading">Hello!</span>
-			            <h1 class="mb-4 mt-3">I'm <span>Vinay Kumar Patnaik</span></h1>
+  <section id="work" class="wrap" aria-labelledby="work-h">
+    <h2 id="work-h">What I work on</h2>
+    <p class="lede">I lead core retail engineering at Alo Yoga and own the system design for our retail systems.</p>
 
-						<!-- Element to contain animated typing -->
-						<span id="typing-animation"></span>
-
-						<script>
-
-						// Initialize the typing animation
-						const typingAnimationElement = document.getElementById('typing-animation');
-
-						// Create an array of typing text
-						const typingTexts = [
-  						'Masters in Business Analytics ',
-  						'Bachelors in Electronics & Communication ',
-						];
-
-						// Create a function to display the typing animation for a given text
-						function playTypingAnimation(text) {
-						// Loop through each character and add it to the element
-						for (let i = 0; i < text.length; i++) {
-							setTimeout(() => {
-							typingAnimationElement.textContent += text[i];
-							}, i * 100); // Increase the delay to slow down the typing animation
-						}
-
-						// Once the animation is complete, reset the text and start over
-						setTimeout(() => {
-							typingAnimationElement.textContent = '';
-							playTypingAnimation(typingTexts[(typingTexts.indexOf(text) + 1) % typingTexts.length]);
-						}, text.length * 100);
-						}
-
-						// Start the typing animation loop
-						playTypingAnimation(typingTexts[0]);
-
-						</script>
-
-						<br>
-						<br>
-			            <h2>Programmer Analyst</h2>
-						<!-- <h2 class="d-flex" style="margin-bottom: 0">With over 5 years of experience</h2> -->
-						<!-- <br> -->
-			            <p><a href="https://www.linkedin.com/in/vinay-kumar-patnaik" class="btn btn-white btn-primary py-3 px-4">Linkedin</a> 
-							<a href="https://github.com/Vinay-Kumar-Patnaik" class="btn btn-white btn-outline-white py-3 px-4">My works</a></p>
-		            </div>
-		          </div>
-	        	</div>
-	        </div>
-	      </div>
-		</div>
-    </section>
-
-
-
-    <section class="ftco-about img ftco-section ftco-no-pb" id="about-section">
-    	<div class="container">
-			<div class="row">
-				<div class="row d-flex align-items-stretch">
-				<!-- <div class="row d-flex"> -->
-					<div class="col-md-6 col-lg-5 d-flex">
-						<div class="img-about img d-flex align-items-stretch">
-							<div class="overlay">
-								<div class="row">
-									<div class="col-sm-6 col-md-5">
-									  <div class="about-img">
-										<img src="images/Vinay-About_me.jpg" class="img-fluid rounded b-shadow-a" alt="">
-									  </div>
-									</div>
-									<!-- Details next to profile image -->
-									<div class="col-sm-6 col-md-7">
-									  <div class="about-info">
-										<p><span class="title-s">Name: </span> <span>Vinay Kumar Patnaik</span></p>
-										<p><span class="title-s">Job Role: </span> <span>Aspring Business Analyst</span></p>
-										<p><span class="title-s">Experience: </span> <span>2 Years 1 Month</span></p>
-										<p><span class="title-s">Address: </span> <span>State College, PA, USA</span></p>
-									  </div>
-									</div>
-								</div>
-
-								<div class="skill-mf">
-									<p class="title-s">Skills</p>
-									<ul class="about-info mt-4 px-md-0 px-2">
-										<li class="d-flex"><span>Programming:</span> <span>C, C++, Python, Java, PICBasic, MATLAB, LaTeX, R, SQL</span></li>
-										<li class="d-flex"><span>Tools & Software:</span> <span>RapidMiner, Tableau, Power BI, MS Office, G Suite, Adobe, Eclipse, Jira</span></li>
-										<li class="d-flex"><span>AI/ML:</span> <span>spaCy, NumPy, Genism, NLTK, VADER, Tensorflow, Scikit-learn, Keras</span></li>
-										<li class="d-flex"><span>Web Dev:</span> <span>HTML, CSS, JavaScript, Flask</span></li>
-										<li class="d-flex"><span>Languages:</span> <span>English, Hindi, Telugu, Odia</span></li>
-										<li class="d-flex"><span>Soft Skills:</span> <span>Teamwork, Leadership, Divergent Thinking, Accountability, Event Management, Effective Planning</span></li>
-									  </ul>
-									  
-								</div>
-							</div>
-						</div>
-					</div>
-					
-					<div class="col-md-6 col-lg-7 pl-lg-5 pb-5">
-						<div class="row justify-content-start pb-3">
-							<div class="col-md-12 heading-section ftco-animate">
-								
-								<h1 class="big">About</h1>
-								<h2 class="mb-4">About Me</h2>
-								
-								<p>With over 5 years of comprehensive experience in the field of data science & analytics, accompanied by a bachelor's degree in engineering. 
-									Proficient in data analysis, statistical analysis, hypothesis testing, customer behaviour analysis, &amp; machine learning. 
-									Demonstrated success in leading impactful projects and providing effective mentorship.</p>
-								<ul class="about-info mt-4 px-md-0 px-2">
-									<li class="d-flex"><span>Profile:</span> <span>Data Science &amp; Analytics</span></li>
-									<li class="d-flex"><span>Domain:</span> <span>Healthcare</span></li>
-									<li class="d-flex"><span>Education:</span> <span>Masters in Business Analytics</span></li>
-									<li class="d-flex"><span>Language:</span> <span>English, Hindi, Telugu, odia</span></li>
-									<li class="d-flex"><span>BI Tools:</span> <span>Microsoft Power BI, Tableau &amp; Looker</span></li>
-									<li class="d-flex"><span>Other Skills:</span> <span>Cloud, PySpark, Excel, Git, JIRA, Google Analytics &amp; SEO</span></li>
-									<li class="d-flex"><span>Interest:</span> <span>Graphics Designing, Photography, Teaching</span></li>
-								</ul>
-							</div>
-						</div>
-
-
-						<div class="counter-wrap ftco-animate d-flex mt-md-3">
-							<div class="text">
-								<p class="mb-4">
-									<span class="number" data-number="30">0</span> <span>+</span>
-									<span>&nbsp; Projects completed</span>
-								</p>
-								<p><a href="https://www.linkedin.com/in/rishabhnmishra/" class="btn btn-white btn-primary py-3 px-3">LinkedIn</a></p>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-    </section>
-
-
-
-	
-    <section class="ftco-section ftco-no-pb" id="resume-section">
-    	<div class="container">
-    		<div class="row justify-content-center pb-5">
-          <div class="col-md-10 heading-section text-center ftco-animate">
-          	<h1 class="big big-2">Resume</h1>
-            <h2 class="mb-4">Resume</h2>
-            <p>Seasoned Senior Data Analyst with 5+ years of experience driving business strategies through data-driven insights. Proven expertise in data science, statistical analysis, machine learning algorithms and project management.</p>
-			<div class="row justify-content-center mt-5">
-				<div class="col-md-6 text-center ftco-animate">
-					<p><a href="#" class="btn btn-white btn-primary py-3 px-7">Download Resume</a></p>
-				</div>
-			</div>
-          </div>
+    <div class="grid">
+      <article class="tile night span-6">
+        <h3>Retail systems for every channel and every country.</h3>
+        <p>I design the retail systems behind Alo's international omnichannel expansion, so stores, POS and online share the same inventory, pricing and orders across regions, currencies and languages.</p>
+        <div class="omni" aria-hidden="true">
+          <div class="chans left"><span class="chan">Retail stores</span><span class="chan">Point of sale</span></div>
+          <div class="core">Shared services<small>Inventory, pricing, orders</small></div>
+          <div class="chans right"><span class="chan">Online store</span><span class="chan">International sites</span></div>
         </div>
+      </article>
 
-		
+      <article class="tile span-2">
+        <div class="stat">4+</div>
+        <p>years building retail, POS and data systems</p>
+      </article>
 
-		<div class="row">
-			<h1 class="big-4">Experience</h1>
-			<div class="underline"></div>
-		</div>
-		<br>
-		
-		<div class="row">
-				<div class="col-md-6">
-					<div class="resume-wrap ftco-animate">
-						<span class="date">2021-Present</span>
-						<h2>Senior Data Analyst</h2>
-						<span class="position">Merkle</span>
-						<p class="mt-4">Merkle, a leading CXM and media company with over 10K+ professionals globally. It's a part of Dentsu International. 
-							<ul>
-								<li>Analysed ad campaigns, clickstream, and customer surveys data, identified an increasing demand and launched a strategic product line.</li>
-								<li>Developed time series forecasting models to predict sales and optimize marketing budgets, got model performance of 92%.</li>
-								<li>Designed and executed A/B tests, performed rigorous statistical analysis. Led to 20% MoM increase in the conversion rate.</li>
-							</ul>
-						</p>
-					</div>
+      <article class="tile span-4">
+        <h3>Point of sale, end to end</h3>
+        <p>Checkout, payments, returns and promotions, plus buy online pick up in store, ship from store and real-time inventory sync between stores, warehouses and the website.</p>
+      </article>
 
-				</div>
+      <article class="tile span-3">
+        <h3>Retail monolith to microservices</h3>
+        <p>Breaking our retail repositories into domain-based services, each with its own API contract and pipeline, so each one ships on its own.</p>
+      </article>
 
-				<div class="col-md-6">
-					<div class="resume-wrap ftco-animate">
-						<span class="date">2018-2021</span>
-						<h2>Senior Data Analyst</h2>
-						<span class="position">iQuanti</span>
-						<p class="mt-4">iQuanti is a data-driven digital marketing analytics and solutions company, helps top 100 global brands. 
-							<ul>
-								<li>Performed in-depth market research and analysis to create online pages. Resulted in ~100% website growth and 30% increase in conversion rate YoY.</li>
-								<li>Delivered multiple training and mentorship sessions on analytical tools like SQL, MS Excel, Power BI, Tableau and Python.</li>
-								<li>Performed migration and enhancements for merchandising dashboard, involved data integration and its feature improvement.</li>
-							</ul>
-						</p>
-					</div>
+      <article class="tile span-3">
+        <h3>The infrastructure underneath</h3>
+        <p>I also run the supporting AWS VPC and infrastructure in Terraform, with reusable modules and matching dev, staging and prod.</p>
+      </article>
 
-				</div>
-			</div>
+      
+    </div>
+  </section>
 
-		<br>
-		<br>
-
-		<div class="row">
-			<h1 class="big-4">Education</h1>
-			<div class="underline"></div>
-		</div>
-		<br>
-		
-		<div class="row">
-			<div class="col-md-6">
-				<div class="resume-wrap ftco-animate">
-					<span class="date">2023-2024</span>
-					<h2>Masters</h2>
-					<span>Business Analytics</span>
-					<span class="position">National Institute of Technology Calicut</span>
-					<p class="mt-4">Grade: 4.0/4.0</p>
-				</div>
-			</div>
-			
-			<div class="col-md-6">
-				<div class="resume-wrap ftco-animate">
-					<span class="date">2017-2021</span>
-					<h2>Bachelors of Technology in Business Analytics</h2>
-					<span class="position">National Institute of Technology Calicut</span>
-					<p class="mt-4">Grade: 4.0/4.0</p>
-				</div>
-			</div>
-
-    	</div>
-    </section>
-
-   
-
-    <section class="ftco-section" id="project-section">
-      <div class="container">
-        <div class="row justify-content-center mb-5 pb-5">
-          <div class="col-md-7 heading-section text-center ftco-animate">
-            <h1 class="big big-2">Projects</h1>
-            <h2 class="mb-4">Projects</h2>
-            <p>Below are the sample Data Analytics projects on SQL, Python, Power BI & ML.</p>
-          </div>
+  <section id="experience" class="wrap" aria-labelledby="exp-h">
+    <h2 id="exp-h">Experience</h2>
+    <p class="lede">Retail systems, healthcare data, and now leading retail engineering.</p>
+    <ol class="timeline">
+      <li class="job current">
+        <div class="when">Sep 2026 – Present</div>
+        <div>
+          <h3>Lead Software Engineer</h3>
+          <div class="org">Alo Yoga, San Ramon, CA</div>
+          <ul>
+            <li>Lead core retail engineering and own system design for Alo Yoga's retail systems: POS, store operations, inventory and orders.</li>
+            <li>Design the retail systems behind the international omnichannel expansion across regions, currencies and languages.</li>
+            <li>Breaking monolithic retail repositories into independently deployable microservices.</li>
+            <li>Run the supporting AWS VPC and infrastructure in Terraform.</li>
+            <li>Set design standards and run design reviews for retail engineering; mentor engineers.</li>
+          </ul>
         </div>
-        <div class="row d-flex">
-          <div class="col-md-4 d-flex ftco-animate">
-          	<div class="blog-entry justify-content-end">
-              <a href="https://github.com/Vinay-Kumar-Patnaik/SQL_Music_Store_Analysis/blob/main/Music_Store_Query.sql" class="block-20 zoom-effect" style="background-image: url('images/proj_1.jpg');">
-              </a>
-              <div class="text mt-3 float-right d-block">
-
-                <h3 class="heading"><a href="https://github.com/Vinay-Kumar-Patnaik/SQL_Music_Store_Analysis/blob/main/Music_Store_Query.sql">Digital Music Store Data Analysis using SQL</a></h3>
-                <p>Analyzed music store data using advanced SQL queires to identify gaps and increase the business growth.</p>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-4 d-flex ftco-animate">
-          	<div class="blog-entry justify-content-end">
-              <a href="https://github.com/Vinay-Kumar-Patnaik/Python_Diwali_Sales_Analysis/blob/main/Diwali_Sales_Analysis.ipynb" class="block-20 zoom-effect" style="background-image: url('images/proj_2.jpg');">
-              </a>
-              <div class="text mt-3 float-right d-block">
-
-                <h3 class="heading"><a href="https://github.com/Vinay-Kumar-Patnaik/Python_Diwali_Sales_Analysis/blob/main/Diwali_Sales_Analysis.ipynb">Data Analysis using Python Project for Beginners</a></h3>
-                <p>Performed exploratory data analysis on diwali sales data using Python to improve the customer experience.</p>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-4 d-flex ftco-animate">
-          	<div class="blog-entry">
-              <a href="https://github.com/Vinay-Kumar-Patnaik/Madhav_Store_Analysis_PowerBI/blob/main/Madhav%20Store%20dashboard.jpg" class="block-20 zoom-effect" style="background-image: url('images/proj_3.jpg');">
-              </a>
-              <div class="text mt-3 float-right d-block">
-
-                <h3 class="heading"><a href="https://github.com/Vinay-Kumar-Patnaik/Madhav_Store_Analysis_PowerBI/blob/main/Madhav%20Store%20dashboard.jpg">Power BI Sales dashboard Project for Beginners</a></h3>
-                <p>Designed a power bi dashboard for Madhav Store to track and analyze the online sales data acorss India.</p>
-              </div>
-            </div>
-          </div>
+      </li>
+      <li class="job">
+        <div class="when">Feb 2025 – Aug 2026</div>
+        <div>
+          <h3>Software Engineer</h3>
+          <div class="org">Alo Yoga, San Ramon, CA</div>
+          <ul>
+            <li>Built and maintained store POS systems in Java and Spring Boot.</li>
+            <li>Connected POS to e-commerce, inventory and order management for omnichannel fulfillment.</li>
+            <li>Built real-time inventory sync between stores, warehouses and the website.</li>
+            <li>Designed and tuned the relational and NoSQL databases behind retail apps.</li>
+          </ul>
         </div>
-	<br>
-		<!-- added justify-content-center to center align the last two projects -->
-		<div class="row d-flex justify-content-center">  
-			<div class="col-md-4 d-flex ftco-animate">
-				<div class="blog-entry justify-content-end">
-				<a href="https://github.com/Vinay-Kumar-Patnaik/sales_forecasting/tree/main" class="block-20 zoom-effect" style="background-image: url('images/proj_4.jpg');">
-				</a>
-				<div class="text mt-3 float-right d-block">
-  
-				  <h3 class="heading"><a href="https://github.com/Vinay-Kumar-Patnaik/sales_forecasting/tree/main">Sales Forecast- Time Series Forecasting</a></h3>
-				  <p>Used multiple machine learning models to forecast sales (retail store) and performed time series analysis.</p>
-				</div>
-			  </div>
-			</div>
-			<div class="col-md-4 d-flex ftco-animate">
-				<div class="blog-entry justify-content-end">
-				<a href="https://github.com/Vinay-Kumar-Patnaik/customer_segmentation/blob/main/Customer_Segmentation-final.ipynb" class="block-20 zoom-effect" style="background-image: url('images/proj_5.jpg');">
-				</a>
-				<div class="text mt-3 float-right d-block">
-  
-				  <h3 class="heading"><a href="https://github.com/Vinay-Kumar-Patnaik/customer_segmentation/blob/main/Customer_Segmentation-final.ipynb">Customer Segmentation using clustering model</a></h3>
-				  <p>Developed a ML model to give various recommendations of financial products &amp; services on target customer groups.</p>
-				</div>
-			  </div>
-			</div>
-		 </div>
-	  </div>
-    </section>
-
-	<section class="ftco-section ftco-no-pt ftco-no-pb ftco-counter img" id="section-counter">
-      <div class="container">
-		<div class="row d-md-flex align-items-center">
-          <div class="col-md d-flex justify-content-center counter-wrap ftco-animate">
-            <div class="block-18">
-              <div class="text">
-                <strong class="number" data-number="20">0</strong>
-                <span>Achievements</span>
-              </div>
-            </div>
-          </div>
-          <div class="col-md d-flex justify-content-center counter-wrap ftco-animate">
-            <div class="block-18">
-              <div class="text">
-                <strong class="number" data-number="30">0</strong>
-                <span>Projects</span>
-              </div>
-            </div>
-          </div>
-          <div class="col-md d-flex justify-content-center counter-wrap ftco-animate">
-            <div class="block-18">
-              <div class="text">
-                <strong class="number" data-number="1000">0</strong>
-                <span>Mentored Students</span>
-              </div>
-            </div>
-          </div>
-          <div class="col-md d-flex justify-content-center counter-wrap ftco-animate">
-            <div class="block-18">
-              <div class="text">
-                <strong class="number" data-number="500">0</strong>
-                <span>Cups of coffee</span>
-              </div>
-            </div>
-          </div>
+      </li>
+      <li class="job">
+        <div class="when">Aug 2024 – Feb 2025</div>
+        <div>
+          <h3>Technical Consultant</h3>
+          <div class="org">Litmus7 Technologies, San Ramon, CA</div>
+          <ul>
+            <li>Led key retail integrations between POS, store fulfillment and enterprise systems.</li>
+            <li>Helped build the client's customer loyalty program.</li>
+          </ul>
         </div>
+      </li>
+      <li class="job">
+        <div class="when">Jun 2021 – Jul 2023</div>
+        <div>
+          <h3>Project Engineer</h3>
+          <div class="org">Wipro Technologies, Hyderabad, India</div>
+          <ul>
+            <li>Improved Optum–Change Healthcare billing by 15% by coordinating three teams.</li>
+            <li>Processed 60,000+ daily claims records for 1,500+ firms; mentored 25 developers.</li>
+          </ul>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <section id="skills" class="wrap" aria-labelledby="skills-h">
+    <h2 id="skills-h">Skills</h2>
+    <p class="lede">The tools and ideas I use most.</p>
+    <div class="skills">
+      <div><h3>Retail engineering</h3><ul><li>Point of sale</li><li>Omnichannel retail</li><li>Order and inventory management</li><li>Payments and loyalty</li><li>International commerce</li></ul></div>
+      <div><h3>System design</h3><ul><li>Retail systems architecture</li><li>Microservices</li><li>Domain-driven design</li><li>Event-driven systems</li><li>REST APIs</li></ul></div>
+      <div><h3>Infrastructure</h3><ul><li>Terraform</li><li>AWS VPC, IAM, networking</li><li>CI/CD</li><li>Docker</li><li>Multi-deployable services</li></ul></div>
+      
+      <div><h3>Languages</h3><ul><li>Java and Spring Boot</li><li>Python and Flask</li><li>JavaScript</li><li>SQL</li></ul></div>
+      <div><h3>Data</h3><ul><li>Relational and NoSQL databases</li><li>TensorFlow, scikit-learn</li><li>Tableau, Power BI</li></ul></div>
+      <div><h3>Leadership</h3><ul><li>Technical strategy</li><li>Architecture reviews</li><li>Mentoring</li><li>Agile delivery</li></ul></div>
+    </div>
+  </section>
+
+  <section class="wrap" aria-labelledby="proj-h">
+    <h2 id="proj-h">Projects and education</h2>
+    <p class="lede">Research, side work and where I studied.</p>
+    <div class="pair">
+      <div class="card">
+        <h3><a href="https://ieeexplore.ieee.org/document/9887447">FACToGRADE</a></h3>
+        <div class="meta">IEEE IAICT 2022</div>
+        <p>An NLP essay grader using LSTMs and entity detection, trained on 6,000 essays to 94.73% accuracy.</p>
       </div>
-	
-	  <div class="ftco-section ftco-hireme img margin-top" style="background-image: url(images/bg_1.jpg)">
-			<!-- <div class="container"> -->
-				<div class="row justify-content-center">
-					<div class="col-md-7 ftco-animate text-center">
-						<h2>More projects on<span> Github  </span> </h2>
-						<div class="heading"> <h4> I love to solve business problems &amp; uncover hidden data stories </h4>
-						<br>
-						<p><a href="https://github.com/Vinay-Kumar-Patnaik" class="btn btn-primary py-3 px-5">GitHub</a></p>
-						</div>
-					</div>
-				</div>
-			<!-- </div> -->
-		</div>
-	</section>
+      <div class="card">
+        <h3>E-commerce database design</h3>
+        <div class="meta">Penn State, 2023</div>
+        <p>A normalized relational model with 15+ entities, built to handle 30,000+ products.</p>
+      </div>
+      <div class="card">
+        <h3>M.S. Business Analytics</h3>
+        <div class="meta">Penn State Smeal College of Business, 2024</div>
+        <p>STEM-designated program in analytics, data mining and decision modeling.</p>
+      </div>
+      <div class="card">
+        <h3>B.Tech Electronics and Communication</h3>
+        <div class="meta">NIT Calicut, 2021</div>
+        <p>JEE Mains 99.6th percentile. Wipro Catalyst Award, 2022.</p>
+      </div>
+    </div>
+  </section>
+</main>
 
+<footer id="contact" class="wrap">
+  <h2>Let's talk.</h2>
+  <p>Open to conversations about retail engineering and system design.</p>
+  <div class="ctas" style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
+    <a class="btn btn-primary" href="mailto:vinaykumarpatnaik@gmail.com">Email me</a>
+    <a class="btn btn-ghost" href="https://www.linkedin.com/in/vinay-kumar-patnaik">LinkedIn</a>
+  </div>
+  <p style="font-size:17px;margin:28px 0 0">vinaykumarpatnaik@gmail.com</p>
+  <div class="fine">© 2026 Vinay Kumar Patnaik</div>
+</footer>
 
-
-    <section class="ftco-section contact-section ftco-no-pb" id="contact-section">
-      <div class="container">
-      	<div class="row justify-content-center mb-5 pb-3">
-          <div class="col-md-7 heading-section text-center ftco-animate">
-            <h1 class="big big-2">Contact</h1>
-            <h2 class="mb-4">Contact Me</h2>
-            <p>Below are the details to reach out to me!</p>
-          </div>
-        </div>
-
-        <div class="row d-flex contact-info mb-5">
-          <div class="col-md-6 col-lg-3 d-flex ftco-animate">
-          	<div class="align-self-stretch box p-4 text-center">
-          		<div class="icon d-flex align-items-center justify-content-center">
-          			<span class="icon-map-signs"></span>
-          		</div>
-          		<h3 class="mb-4">Address</h3>
-	            <p>State College, Pennsylvania, USA</p>
-	          </div>
-          </div>
-          <div class="col-md-6 col-lg-3 d-flex ftco-animate">
-          	<div class="align-self-stretch box p-4 text-center">
-          		<div class="icon d-flex align-items-center justify-content-center">
-          			<span class="icon-phone2"></span>
-          		</div>
-          		<h3 class="mb-4">Contact Number</h3>
-	            <p><a href="tel://0101010101">+ 0 101 0101 101</a></p>
-	          </div>
-          </div>
-          <div class="col-md-6 col-lg-3 d-flex ftco-animate">
-          	<div class="align-self-stretch box p-4 text-center">
-          		<div class="icon d-flex align-items-center justify-content-center">
-          			<span class="icon-paper-plane"></span>
-          		</div>
-          		<h3 class="mb-4">Email Address</h3>
-	            <p><a href="mailto:vinaykumarpatnaik@gmail.com">vinaykumarpatnaik@gmail.com</a></p>
-	          </div>
-          </div>
-          <div class="col-md-6 col-lg-3 d-flex ftco-animate">
-          	<div class="align-self-stretch box p-4 text-center">
-          		<div class="icon d-flex align-items-center justify-content-center">
-          			<span class="icon-globe"></span>
-          		</div>
-          		<h3 class="mb-4">Download Resume</h3>
-	            <p><a href="#">resumelink</a></p>
-	          </div>
-          </div>
-
-		  <div class="container">
-			<br>
-			<br>
-			<div class="row justify-content-center">
-				<div class="col-md-7 ftco-animate text-center">
-					<h2>Have a<span> Question?  </span> <a href="https://forms.gle/uLaTShUKXraAvHJ77" class="btn btn-primary py-3 px-5">Click Here</a> </h2>
-				</div>
-			</div>
-				<br>
-					<ul class="ftco-footer-social list-unstyled d-flex justify-content-center align-items-center mb-0">
-					  <li class="ftco-animate normal-txt">Find me on  </li>
-					  <li class="ftco-animate"><a href="https://www.linkedin.com/in/vinay-kumar-patnaik/"><span class="icon-linkedin"></span></a></li>  
-					  <li class="ftco-animate"><a href="https://twitter.com/vinaykumarpatn3"><span class="icon-twitter"></span></a></li>
-					  <li class="ftco-animate"><a href="https://facebook.com/vinaykumarpatnaik"><span class="icon-facebook"></span></a></li>
-				      <li class="ftco-animate"><a href="https://www.instagram.com/vinaykumar.patnaik/"><span class="icon-instagram"></span></a></li>
-					</ul>
-				<br>
-		   </div>
-   </div>
- </section>
-
-
- 
-	
-    <footer class="ftco-footer ftco-section">
-		<div class="container">
-		  <div class="row">
-			<div class="col-md-12 text-center">
-  
-			  <p>Vinay Kumar Patnaik's Portfolio</p>
-			</div>
-		  </div>
-		</div>
-	  </footer>
-
-
-  <!-- loader -->
-  <div id="ftco-loader" class="show fullscreen"><svg class="circular" width="48px" height="48px"><circle class="path-bg" cx="24" cy="24" r="22" fill="none" stroke-width="4" stroke="#eeeeee"/><circle class="path" cx="24" cy="24" r="22" fill="none" stroke-width="4" stroke-miterlimit="10" stroke="#F96D00"/></svg></div>
-
-
-  <script src="js/jquery.min.js"></script>
-  <script src="js/jquery-migrate-3.0.1.min.js"></script>
-  <script src="js/popper.min.js"></script>
-  <script src="js/bootstrap.min.js"></script>
-  <script src="js/jquery.easing.1.3.js"></script>
-  <script src="js/jquery.waypoints.min.js"></script>
-  <script src="js/jquery.stellar.min.js"></script>
-  <script src="js/owl.carousel.min.js"></script>
-  <script src="js/jquery.magnific-popup.min.js"></script>
-  <script src="js/aos.js"></script>
-  <script src="js/jquery.animateNumber.min.js"></script>
-  <script src="js/scrollax.min.js"></script>
-  
-  <script src="js/main.js"></script>
-    
-  </body>
+</body>
 </html>
