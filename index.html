@@ -4,129 +4,163 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Vinay Kumar Patnaik — Lead Software Engineer</title>
-<meta name="description" content="Lead Software Engineer at Alo Yoga, focused on retail engineering and system design for POS, store, inventory and omnichannel systems.">
+<meta name="description" content="Lead Software Engineer at Alo Yoga, focused on retail engineering and system design for POS, store fulfillment, inventory and omnichannel systems.">
+<meta name="color-scheme" content="light dark">
+<link rel="canonical" href="https://vinaykumarpatnaik.com/">
+<meta property="og:title" content="Vinay Kumar Patnaik — Lead Software Engineer">
+<meta property="og:description" content="I design and build retail systems: POS, store fulfillment, inventory and orders, across every channel and country.">
+<meta property="og:image" content="https://vinaykumarpatnaik.com/images/avatar.png">
+<meta property="og:url" content="https://vinaykumarpatnaik.com/">
+<link rel="icon" href="images/avatar.png">
+
+<!-- Proxima Nova is a licensed font served by Adobe Fonts.
+     To switch it on: create a web project at fonts.adobe.com with Proxima Nova
+     (weights 400, 600, 700), add vinaykumarpatnaik.com as a domain, and paste the
+     kit's stylesheet link below in place of KIT_ID.
+     Until then, the page falls back to Figtree, the closest free match. -->
+<!-- <link rel="stylesheet" href="https://use.typekit.net/KIT_ID.css"> -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap">
+
 <style>
   :root{
-    --canvas:#fbfbfd; --surface:#ffffff; --ink:#1d1d1f; --muted:#6e6e73;
-    --hair:#d2d2d7; --link:#0066cc; --night:#000000; --night-2:#1d1d1f;
-    --radius-xl:28px; --radius-md:18px;
-    --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --canvas:#fbfbfd; --surface:#ffffff; --ink:#1d1d1f; --body:#424245; --muted:#6e6e73;
+    --hair:#d2d2d7; --link:#0066cc; --cta:#0071e3; --cta-hover:#0077ed;
+    --night:#000000; --night-ink:#f5f5f7; --night-muted:#a1a1a6; --night-line:#424245;
+    --nav:rgba(251,251,253,.72); --nav-line:rgba(0,0,0,.08); --tag:rgba(0,113,227,.1);
+    --font:"proxima-nova","Proxima Nova","Figtree",-apple-system,BlinkMacSystemFont,"Helvetica Neue",Helvetica,Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --canvas:#000000; --surface:#1d1d1f; --ink:#f5f5f7; --body:#c7c7cc; --muted:#86868b;
+      --hair:#38383a; --link:#2997ff; --cta:#0071e3; --cta-hover:#0a84ff;
+      --night:#0b0b0c; --night-line:#3a3a3c;
+      --nav:rgba(22,22,23,.72); --nav-line:rgba(255,255,255,.08); --tag:rgba(41,151,255,.16);
+    }
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
-  body{background:var(--canvas);color:var(--ink);font-family:var(--font);font-size:17px;line-height:1.47;letter-spacing:-0.022em;-webkit-font-smoothing:antialiased}
+  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;scroll-padding-top:64px}
+  body{background:var(--canvas);color:var(--ink);font-family:var(--font);font-size:17px;line-height:1.5;letter-spacing:-0.01em;-webkit-font-smoothing:antialiased;overflow-x:clip}
+  img{max-width:100%}
   a{color:var(--link);text-decoration:none}
   a:hover{text-decoration:underline}
-  :focus-visible{outline:3px solid #0071e3;outline-offset:3px;border-radius:6px}
-  .wrap{max-width:980px;margin:0 auto;padding-inline:22px}
+  :focus-visible{outline:3px solid var(--cta);outline-offset:3px;border-radius:6px}
+  .wrap{max-width:980px;margin-inline:auto;padding-inline:22px}
 
   /* nav */
-  nav{position:sticky;top:0;z-index:10;background:rgba(251,251,253,.72);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid rgba(0,0,0,.08)}
-  nav .wrap{display:flex;align-items:center;justify-content:space-between;height:48px}
-  nav .me{font-weight:600;font-size:15px;color:var(--ink)}
-  nav ul{display:flex;gap:28px;list-style:none}
-  nav ul a{color:var(--ink);opacity:.8;font-size:13px}
+  nav{position:sticky;top:0;z-index:10;background:var(--nav);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--nav-line)}
+  nav .wrap{display:flex;align-items:center;justify-content:space-between;height:52px}
+  nav .me{font-weight:700;font-size:16px;color:var(--ink);letter-spacing:-0.01em}
+  nav .me:hover{text-decoration:none}
+  nav ul{display:flex;gap:26px;list-style:none}
+  nav ul a{color:var(--ink);opacity:.72;font-size:14px;font-weight:500;padding-block:14px}
   nav ul a:hover{opacity:1;text-decoration:none}
 
   /* hero */
-  .hero{text-align:center;padding-block:120px 96px}
-  .avatar{display:block;width:160px;height:160px;border-radius:50%;margin:0 auto 28px}
-  .hero .role{font-size:21px;font-weight:600;color:var(--muted);margin-bottom:14px}
-  .hero h1{font-size:clamp(44px,8vw,80px);line-height:1.05;letter-spacing:-0.035em;font-weight:700;max-width:13ch;margin:0 auto}
-  .hero p{font-size:clamp(19px,2.4vw,24px);line-height:1.38;color:var(--muted);max-width:34ch;margin:24px auto 0;letter-spacing:-0.01em}
-  .hero .ctas{margin-top:36px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
-  .btn{display:inline-block;padding:12px 22px;border-radius:980px;font-size:17px}
-  .btn-primary{background:#0071e3;color:#fff}
-  .btn-primary:hover{background:#0077ed;text-decoration:none}
-  .btn-ghost{color:var(--link);border:1px solid var(--link)}
-  .btn-ghost:hover{text-decoration:none;background:rgba(0,102,204,.06)}
+  .hero{text-align:center;padding-block:104px 96px}
+  .avatar{display:block;width:152px;height:152px;border-radius:50%;margin:0 auto 28px}
+  .hero .role{font-size:20px;font-weight:600;color:var(--muted)}
+  .hero h1{font-size:clamp(46px,8.4vw,84px);line-height:1.02;letter-spacing:-0.035em;font-weight:800;max-width:12ch;margin:12px auto 0;text-wrap:balance}
+  .hero .sub{font-size:clamp(19px,2.4vw,24px);line-height:1.35;color:var(--muted);max-width:32ch;margin:24px auto 0;text-wrap:balance}
+  .ctas{margin-top:36px;display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;min-height:44px;padding:0 24px;border-radius:980px;font-size:17px;font-weight:500}
+  .btn:hover{text-decoration:none}
+  .btn-primary{background:var(--cta);color:#fff}
+  .btn-primary:hover{background:var(--cta-hover)}
+  .btn-ghost{color:var(--link);box-shadow:inset 0 0 0 1px var(--link)}
+  .btn-ghost:hover{background:var(--tag)}
   @media (prefers-reduced-motion:no-preference){
     .hero > *{opacity:0;transform:translateY(14px);animation:rise .9s cubic-bezier(.2,.7,.2,1) forwards}
     .hero > :nth-child(2){animation-delay:.08s}
-    .hero > :nth-child(3){animation-delay:.18s}
-    .hero > :nth-child(4){animation-delay:.28s}
-    .hero > :nth-child(5){animation-delay:.36s}
+    .hero > :nth-child(3){animation-delay:.16s}
+    .hero > :nth-child(4){animation-delay:.26s}
+    .hero > :nth-child(5){animation-delay:.34s}
     @keyframes rise{to{opacity:1;transform:none}}
   }
 
-  section{padding-block:88px}
-  h2{font-size:clamp(32px,5vw,48px);line-height:1.08;letter-spacing:-0.03em;font-weight:700;margin-bottom:12px}
-  .lede{font-size:21px;color:var(--muted);max-width:40ch;margin-bottom:48px;line-height:1.38}
+  /* sections */
+  section{padding-block:96px}
+  h2{font-size:clamp(34px,5vw,52px);line-height:1.05;letter-spacing:-0.03em;font-weight:800;margin-bottom:12px;text-wrap:balance}
+  .lede{font-size:21px;line-height:1.38;color:var(--muted);max-width:38ch;margin-bottom:52px}
 
-  /* focus grid */
-  .grid{display:grid;grid-template-columns:repeat(6,1fr);gap:20px}
-  .tile{background:var(--surface);border-radius:var(--radius-xl);padding:40px;min-height:260px;display:flex;flex-direction:column}
-  .tile h3{font-size:28px;line-height:1.14;letter-spacing:-0.025em;font-weight:700;margin-bottom:10px}
-  .tile p{color:var(--muted);font-size:17px}
-  .tile.span-6{grid-column:span 6}
-  .tile.span-3{grid-column:span 3}
-  .tile.span-2{grid-column:span 2}
-  .tile.span-4{grid-column:span 4}
-  .tile.night{background:var(--night);color:#f5f5f7}
-  .tile.night p{color:#a1a1a6}
-  .tile.night h3{font-size:clamp(32px,4.4vw,44px);max-width:16ch}
+  /* bento */
+  .grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:20px}
+  .tile{background:var(--surface);border-radius:28px;padding:40px;display:flex;flex-direction:column}
+  .tile h3{font-size:28px;line-height:1.12;letter-spacing:-0.025em;font-weight:700;margin-bottom:10px;text-wrap:balance}
+  .tile p{color:var(--muted)}
+  .s6{grid-column:span 6}.s4{grid-column:span 4}.s3{grid-column:span 3}.s2{grid-column:span 2}
+  .tile.night{background:var(--night);color:var(--night-ink);padding:48px}
+  @media (prefers-color-scheme:dark){.tile.night{box-shadow:inset 0 0 0 1px var(--night-line)}}
+  .tile.night p{color:var(--night-muted);max-width:60ch}
+  .tile.night h3{font-size:clamp(32px,4.6vw,48px);line-height:1.05;max-width:15ch;margin-bottom:16px}
+  .stat{font-size:72px;font-weight:800;letter-spacing:-0.05em;line-height:1;margin-bottom:12px}
+  .tile.stat-tile{justify-content:flex-end}
 
   /* omnichannel diagram */
-  .omni{margin-top:auto;padding-top:44px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:0}
+  .omni{margin-top:52px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center}
   .chans{display:flex;flex-direction:column;gap:12px}
-  .chan{border:1px solid #424245;border-radius:980px;padding:9px 18px;font-size:15px;color:#f5f5f7;text-align:center;white-space:nowrap}
-  .core{width:190px;height:190px;padding:20px;border-radius:50%;margin:0 28px;display:grid;place-items:center;text-align:center;font-size:15px;font-weight:600;color:#fff;
-    background:radial-gradient(circle at 30% 25%, #2997ff 0%, #0071e3 45%, #003e9e 100%);box-shadow:0 0 80px rgba(41,151,255,.35)}
-  .core small{display:block;font-weight:400;color:rgba(255,255,255,.75);font-size:13px;margin-top:4px}
-  .links{position:relative;height:1px}
-  .chans.left .chan{position:relative}
-  .chans.left .chan::after,.chans.right .chan::before{content:"";position:absolute;top:50%;width:28px;height:1px;background:#424245}
-  .chans.left .chan::after{right:-29px}
-  .chans.right .chan{position:relative}
-  .chans.right .chan::before{left:-29px}
+  .chan{position:relative;border:1px solid var(--night-line);border-radius:980px;padding:10px 18px;font-size:15px;color:var(--night-ink);text-align:center;white-space:nowrap}
+  .left .chan::after,.right .chan::before{content:"";position:absolute;top:50%;width:32px;height:1px;background:var(--night-line)}
+  .left .chan::after{right:-33px}
+  .right .chan::before{left:-33px}
+  .core{width:196px;height:196px;border-radius:50%;margin-inline:32px;display:grid;place-content:center;text-align:center;padding:24px;font-size:16px;font-weight:700;color:#fff;
+    background:radial-gradient(circle at 30% 25%,#2997ff 0%,#0071e3 45%,#003e9e 100%);box-shadow:0 0 90px rgba(41,151,255,.35)}
+  .core small{display:block;font-weight:500;color:rgba(255,255,255,.78);font-size:13px;margin-top:4px;line-height:1.35}
 
-  .stat{font-size:56px;font-weight:700;letter-spacing:-0.04em;line-height:1;margin-bottom:8px}
-
-  /* experience */
-  .timeline{list-style:none;border-top:1px solid var(--hair)}
-  .job{display:grid;grid-template-columns:200px 1fr;gap:32px;padding:36px 0;border-bottom:1px solid var(--hair)}
-  .job .when{color:var(--muted);font-size:15px;padding-top:4px}
-  .job h3{font-size:24px;letter-spacing:-0.02em;font-weight:600}
-  .job .org{color:var(--muted);margin-bottom:14px}
-  .job ul{padding-left:1.1em;color:#424245}
-  .job li{margin:6px 0;max-width:68ch}
-  .job.current h3::after{content:"Current";font-size:12px;font-weight:600;color:#0071e3;background:rgba(0,113,227,.1);padding:3px 9px;border-radius:980px;margin-left:10px;vertical-align:4px;letter-spacing:0}
+  /* ruled rows: experience, education, awards */
+  .rows{list-style:none;border-top:1px solid var(--hair)}
+  .row{display:grid;grid-template-columns:200px minmax(0,1fr);gap:32px;padding-block:32px;border-bottom:1px solid var(--hair)}
+  .row .when{color:var(--muted);font-size:15px;padding-top:5px;font-variant-numeric:tabular-nums}
+  .row h3{font-size:24px;line-height:1.2;letter-spacing:-0.02em;font-weight:700}
+  .row .org{color:var(--muted);margin-top:2px}
+  .row ul{padding-left:1.1em;color:var(--body);margin-top:14px}
+  .row li{margin-block:6px;max-width:66ch}
+  .row p{color:var(--body);margin-top:10px;max-width:62ch}
+  .row.current h3::after{content:"Current";display:inline-block;font-size:12px;font-weight:700;color:var(--link);background:var(--tag);padding:3px 10px;border-radius:980px;margin-left:10px;vertical-align:4px;letter-spacing:0}
+  .rows.compact .row{padding-block:24px}
+  .rows.compact .row h3{font-size:20px}
 
   /* skills */
-  .skills{display:grid;grid-template-columns:repeat(3,1fr);gap:40px 32px}
-  .skills h3{font-size:19px;font-weight:600;margin-bottom:10px}
+  .skills{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:44px 32px}
+  .skills h3{font-size:19px;font-weight:700;margin-bottom:10px}
   .skills ul{list-style:none;color:var(--muted)}
-  .skills li{padding:3px 0}
+  .skills li{padding-block:3px}
 
-  /* projects + education */
-  .pair{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-  .card{background:var(--surface);border-radius:var(--radius-md);padding:32px}
-  .card h3{font-size:21px;font-weight:600;letter-spacing:-0.02em;margin-bottom:6px}
-  .card .meta{color:var(--muted);font-size:15px;margin-bottom:12px}
-  .card p{color:#424245}
+  /* projects */
+  .cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+  .card{background:var(--surface);border-radius:18px;padding:32px;display:flex;flex-direction:column}
+  .card .result{font-size:44px;font-weight:800;letter-spacing:-0.04em;line-height:1;margin-bottom:20px}
+  .card h3{font-size:21px;line-height:1.2;font-weight:700;letter-spacing:-0.02em;margin-bottom:6px;text-wrap:balance}
+  .card .meta{color:var(--muted);font-size:15px;margin-bottom:14px}
+  .card p{color:var(--body)}
+  .card .more{margin-top:auto;padding-top:18px;font-size:15px;font-weight:500}
 
-  footer{padding-block:96px 64px;text-align:center}
-  footer h2{margin-bottom:16px}
-  footer p{color:var(--muted);font-size:21px;margin-bottom:32px}
-  .fine{margin-top:72px;font-size:12px;color:var(--muted);border-top:1px solid var(--hair);padding-top:18px}
+  /* footer */
+  footer{padding-block:112px 56px;text-align:center}
+  footer h2{margin-bottom:14px}
+  footer .lede{margin:0 auto 32px;max-width:34ch}
+  footer .addr{margin-top:24px;color:var(--muted);font-size:15px}
+  .fine{margin-top:80px;padding-top:18px;border-top:1px solid var(--hair);font-size:12px;color:var(--muted)}
 
   @media (max-width:820px){
     nav ul{gap:18px}
-    .tile.span-3,.tile.span-2,.tile.span-4{grid-column:span 6}
-    .tile{padding:32px;min-height:0}
-    .job{grid-template-columns:1fr;gap:6px}
-    .skills{grid-template-columns:1fr 1fr}
-    .pair{grid-template-columns:1fr}
-    .omni{grid-template-columns:1fr;justify-items:center;gap:24px}
+    .s2,.s3,.s4{grid-column:span 6}
+    .tile,.tile.night{padding:32px}
+    .row{grid-template-columns:minmax(0,1fr);gap:4px}
+    .skills{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .cards{grid-template-columns:minmax(0,1fr)}
+    .omni{grid-template-columns:minmax(0,1fr);justify-items:center;gap:22px}
     .chans{flex-direction:row;flex-wrap:wrap;justify-content:center}
-    .chans.left .chan::after,.chans.right .chan::before{display:none}
+    .left .chan::after,.right .chan::before{display:none}
     .core{margin:0}
   }
-  @media (max-width:520px){
+  @media (max-width:560px){
     nav ul li:nth-child(n+3){display:none}
-    .skills{grid-template-columns:1fr}
-    .hero{padding-block:88px 64px}
-    section{padding-block:64px}
+    .skills{grid-template-columns:minmax(0,1fr)}
+    .hero{padding-block:72px 64px}
+    section{padding-block:72px}
+    .lede{font-size:19px;margin-bottom:36px}
   }
 </style>
 </head>
@@ -138,7 +172,8 @@
     <ul>
       <li><a href="#work">Work</a></li>
       <li><a href="#experience">Experience</a></li>
-      <li><a href="#skills">Skills</a></li>
+      <li><a href="#projects">Projects</a></li>
+      <li><a href="#education">Education</a></li>
       <li><a href="#contact">Contact</a></li>
     </ul>
   </div>
@@ -146,10 +181,10 @@
 
 <main id="top">
   <header class="hero wrap">
-    <img class="avatar" src="images/avatar.png" width="160" height="160" alt="Portrait of Vinay Kumar Patnaik">
+    <img class="avatar" src="images/avatar.png" width="152" height="152" alt="Portrait of Vinay Kumar Patnaik">
     <p class="role">Lead Software Engineer at Alo Yoga</p>
     <h1>I design and build retail systems.</h1>
-    <p>Checkout, inventory and orders for stores and online, designed to scale across countries.</p>
+    <p class="sub">Checkout, store fulfillment, inventory and orders, built to work across every channel and every country.</p>
     <div class="ctas">
       <a class="btn btn-primary" href="mailto:vinaykumarpatnaik@gmail.com">Get in touch</a>
       <a class="btn btn-ghost" href="#experience">See my experience</a>
@@ -161,59 +196,57 @@
     <p class="lede">I lead core retail engineering at Alo Yoga and own the system design for our retail systems.</p>
 
     <div class="grid">
-      <article class="tile night span-6">
+      <article class="tile night s6">
         <h3>Retail systems for every channel and every country.</h3>
-        <p>I design the retail systems behind Alo's international omnichannel expansion, so stores, POS and online share the same inventory, pricing and orders across regions, currencies and languages.</p>
+        <p>I design the systems behind Alo's international omnichannel expansion, so stores, POS and online share the same inventory, pricing and orders across regions, currencies and languages.</p>
         <div class="omni" aria-hidden="true">
           <div class="chans left"><span class="chan">Retail stores</span><span class="chan">Point of sale</span></div>
-          <div class="core">Shared services<small>Inventory, pricing, orders</small></div>
+          <div class="core">Shared services<small>Inventory, pricing<br>and orders</small></div>
           <div class="chans right"><span class="chan">Online store</span><span class="chan">International sites</span></div>
         </div>
       </article>
 
-      <article class="tile span-2">
+      <article class="tile stat-tile s2">
         <div class="stat">4+</div>
         <p>years building retail, POS and data systems</p>
       </article>
 
-      <article class="tile span-4">
+      <article class="tile s4">
         <h3>Point of sale and store fulfillment</h3>
         <p>Checkout, payments and returns, store fulfillment that links online orders to store inventory, and the technical side of Alo's customer loyalty program.</p>
       </article>
 
-      <article class="tile span-3">
+      <article class="tile s3">
         <h3>Retail monolith to microservices</h3>
         <p>Breaking our retail repositories into domain-based services, each with its own API contract and pipeline, so each one ships on its own.</p>
       </article>
 
-      <article class="tile span-3">
+      <article class="tile s3">
         <h3>The infrastructure underneath</h3>
         <p>I also run the supporting AWS VPC and infrastructure in Terraform, with reusable modules and matching dev, staging and prod.</p>
       </article>
-
-      
     </div>
   </section>
 
   <section id="experience" class="wrap" aria-labelledby="exp-h">
     <h2 id="exp-h">Experience</h2>
     <p class="lede">Retail systems, healthcare data, and now leading retail engineering.</p>
-    <ol class="timeline">
-      <li class="job current">
+    <ol class="rows">
+      <li class="row current">
         <div class="when">Sep 2026 – Present</div>
         <div>
           <h3>Lead Software Engineer</h3>
           <div class="org">Alo Yoga, San Ramon, CA</div>
           <ul>
-            <li>Lead core retail engineering and own system design for Alo Yoga's retail systems: POS, store fulfillment, inventory, orders and loyalty.</li>
+            <li>Lead core retail engineering and own system design for Alo's retail systems: POS, store fulfillment, inventory, orders and loyalty.</li>
             <li>Design the retail systems behind the international omnichannel expansion across regions, currencies and languages.</li>
             <li>Breaking monolithic retail repositories into independently deployable microservices.</li>
             <li>Run the supporting AWS VPC and infrastructure in Terraform.</li>
-            <li>Set design standards and run design reviews for retail engineering; mentor engineers.</li>
+            <li>Set design standards and run design reviews for retail engineering, and mentor engineers.</li>
           </ul>
         </div>
       </li>
-      <li class="job">
+      <li class="row">
         <div class="when">Feb 2025 – Aug 2026</div>
         <div>
           <h3>Software Engineer</h3>
@@ -226,7 +259,7 @@
           </ul>
         </div>
       </li>
-      <li class="job">
+      <li class="row">
         <div class="when">Aug 2024 – Feb 2025</div>
         <div>
           <h3>Technical Consultant</h3>
@@ -237,13 +270,13 @@
           </ul>
         </div>
       </li>
-      <li class="job">
+      <li class="row">
         <div class="when">Jun 2021 – Jul 2023</div>
         <div>
           <h3>Project Engineer</h3>
-          <div class="org">Wipro Technologies, Hyderabad, India</div>
+          <div class="org">Wipro, Hyderabad, India</div>
           <ul>
-            <li>MDIV and SUSHA developer for Change Healthcare across two teams, with a 100% client acceptance rate.</li>
+            <li>MDIV and SUSHA developer for Change Healthcare across two teams at once, with a 100% client acceptance rate.</li>
             <li>Improved billing efficiency by 15%, processed 60,000+ daily claims records for 1,500+ firms, and mentored 25 developers.</li>
           </ul>
         </div>
@@ -257,65 +290,99 @@
     <div class="skills">
       <div><h3>Retail engineering</h3><ul><li>Point of sale</li><li>Store fulfillment</li><li>Omnichannel retail</li><li>Order and inventory management</li><li>Payments and loyalty</li><li>International commerce</li></ul></div>
       <div><h3>System design</h3><ul><li>Retail systems architecture</li><li>Microservices</li><li>Domain-driven design</li><li>Event-driven systems</li><li>REST APIs</li></ul></div>
-      <div><h3>Infrastructure</h3><ul><li>Terraform</li><li>AWS VPC, IAM, networking</li><li>CI/CD</li><li>Docker</li><li>Multi-deployable services</li></ul></div>
-      
+      <div><h3>Infrastructure</h3><ul><li>Terraform</li><li>AWS VPC, IAM and networking</li><li>CI/CD</li><li>Docker</li><li>Multi-deployable services</li></ul></div>
       <div><h3>Languages</h3><ul><li>Java and Spring Boot</li><li>Python and Flask</li><li>JavaScript</li><li>SQL</li></ul></div>
-      <div><h3>Data</h3><ul><li>Relational and NoSQL databases</li><li>TensorFlow, scikit-learn</li><li>Tableau, Power BI</li></ul></div>
-      <div><h3>Leadership</h3><ul><li>Technical strategy</li><li>Architecture reviews</li><li>Mentoring</li><li>Agile delivery</li></ul></div>
+      <div><h3>Data</h3><ul><li>Relational and NoSQL databases</li><li>Data modeling</li><li>Statistical analysis</li><li>TensorFlow and scikit-learn</li><li>Tableau and Power BI</li></ul></div>
+      <div><h3>Leadership</h3><ul><li>Technical strategy</li><li>Design reviews</li><li>Mentoring</li><li>Agile delivery</li></ul></div>
     </div>
   </section>
 
-  <section class="wrap" aria-labelledby="proj-h">
-    <h2 id="proj-h">Projects, education and awards</h2>
-    <p class="lede">Research, where I studied, and recognition along the way.</p>
-    <div class="pair">
-      <div class="card">
-        <h3><a href="https://ieeexplore.ieee.org/document/9887447">FACToGRADE</a></h3>
-        <div class="meta">NIT Calicut, 2020–2021, published at IEEE IAICT 2022</div>
-        <p>An NLP essay grader using LSTMs and entity detection, trained on 6,000 essays to 94.73% accuracy.</p>
-      </div>
-      <div class="card">
+  <section id="projects" class="wrap" aria-labelledby="proj-h">
+    <h2 id="proj-h">Projects</h2>
+    <p class="lede">Research and analytics work from grad school and college.</p>
+    <div class="cards">
+      <article class="card">
+        <div class="result">23%</div>
         <h3>Reducing food waste at Penn State Dining</h3>
-        <div class="meta">Penn State Smeal, May–Aug 2024</div>
+        <div class="meta">Penn State Smeal, 2024</div>
         <p>A team analytics project that dug into dining-hall waste data and built the business case for changes that cut food waste by 23%.</p>
-      </div>
-      <div class="card">
+      </article>
+      <article class="card">
+        <div class="result">94.73%</div>
+        <h3>FACToGRADE essay grader</h3>
+        <div class="meta">NIT Calicut, 2020–2021</div>
+        <p>An NLP essay grader using LSTMs and entity detection, trained on 6,000 essays. Published at IEEE IAICT 2022.</p>
+        <a class="more" href="https://ieeexplore.ieee.org/document/9887447">Read the paper on IEEE Xplore</a>
+      </article>
+      <article class="card">
+        <div class="result">30K+</div>
         <h3>E-commerce database design</h3>
-        <div class="meta">Penn State, 2023</div>
-        <p>A normalized relational model with 15+ entities, built to handle 30,000+ products.</p>
-      </div>
-      <div class="card">
-        <h3>M.S. Business Analytics</h3>
-        <div class="meta">Penn State Smeal College of Business, 2024</div>
-        <p>STEM-designated program in analytics, data mining and decision modeling.</p>
-      </div>
-      <div class="card">
-        <h3>B.Tech Electronics and Communication</h3>
-        <div class="meta">NIT Calicut, 2021</div>
-        <p>JEE Mains 99.6th percentile. I speak English, Hindi, Telugu, Odia and some French.</p>
-      </div>
-      <div class="card">
-        <h3>Wipro Catalyst Award</h3>
-        <div class="meta">Wipro, July 2022</div>
-        <p>Given in my first year for delivering across two teams at once with strong ownership and customer focus.</p>
-      </div>
-      <div class="card">
-        <h3>Mathematics conference awards</h3>
-        <div class="meta">AIMER and AMTI, January 2018</div>
-        <p>First place in the quiz at the AIMER International Mathematics Conference, and Best Presentation for a geometry research paper at the AMTI National Mathematics Conference.</p>
-      </div>
+        <div class="meta">Penn State Smeal, 2023</div>
+        <p>A normalized relational model with 15+ entities, designed to handle 30,000+ products.</p>
+      </article>
     </div>
+  </section>
+
+  <section id="education" class="wrap" aria-labelledby="edu-h">
+    <h2 id="edu-h">Education</h2>
+    <p class="lede">Engineering first, then business analytics to connect code with commerce.</p>
+    <ol class="rows">
+      <li class="row">
+        <div class="when">2023 – 2024</div>
+        <div>
+          <h3>M.S. Business Analytics</h3>
+          <div class="org">Penn State Smeal College of Business, State College, PA</div>
+          <p>STEM-designated program in analytics, data mining and decision modeling.</p>
+        </div>
+      </li>
+      <li class="row">
+        <div class="when">2017 – 2021</div>
+        <div>
+          <h3>B.Tech Electronics and Communication Engineering</h3>
+          <div class="org">National Institute of Technology Calicut, India</div>
+          <p>Admitted with a JEE Mains score in the 99.6th percentile. I speak English, Hindi, Telugu, Odia and some French.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <section id="awards" class="wrap" aria-labelledby="awards-h">
+    <h2 id="awards-h">Awards</h2>
+    <p class="lede">Recognition along the way.</p>
+    <ol class="rows compact">
+      <li class="row">
+        <div class="when">Jul 2022</div>
+        <div>
+          <h3>Wipro Catalyst Award</h3>
+          <p>Given in my first year for delivering across two teams at once with strong ownership and customer focus.</p>
+        </div>
+      </li>
+      <li class="row">
+        <div class="when">Jan 2018</div>
+        <div>
+          <h3>Best Performer, First Prize</h3>
+          <p>First place in the quiz at the AIMER International Mathematics Conference.</p>
+        </div>
+      </li>
+      <li class="row">
+        <div class="when">Jan 2018</div>
+        <div>
+          <h3>Best Presentation Award</h3>
+          <p>For a geometry research paper at the AMTI National Mathematics Conference.</p>
+        </div>
+      </li>
+    </ol>
   </section>
 </main>
 
 <footer id="contact" class="wrap">
   <h2>Let's talk.</h2>
-  <p>Open to conversations about retail engineering and system design.</p>
-  <div class="ctas" style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
+  <p class="lede">Open to conversations about retail engineering and system design.</p>
+  <div class="ctas">
     <a class="btn btn-primary" href="mailto:vinaykumarpatnaik@gmail.com">Email me</a>
     <a class="btn btn-ghost" href="https://www.linkedin.com/in/vinay-kumar-patnaik">LinkedIn</a>
   </div>
-  <p style="font-size:17px;margin:28px 0 0">vinaykumarpatnaik@gmail.com</p>
+  <p class="addr">vinaykumarpatnaik@gmail.com</p>
   <div class="fine">© 2026 Vinay Kumar Patnaik</div>
 </footer>
 
