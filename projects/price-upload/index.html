@@ -84,8 +84,8 @@
 <header class="head wrap">
   <p class="kind">Retail engineering</p>
   <h1>Concurrent price upload</h1>
-  <p class="sub">I push price files for 12 markets to a pricing API twice: one batch at a time, and through a worker pool bounded by a semaphore. The page runs both and shows the difference.</p>
-  <p class="note">This is a personal demo project. It runs on generated sample data in your browser and is not Alo Yoga's code or data. There is no real API: every latency is simulated, and every time shown is simulated time on a virtual clock, not wall-clock time.</p>
+  <p class="sub">I push price files for 12 markets to a pricing API twice: one batch at a time, and through a worker pool bounded by a semaphore. Run it and compare the two.</p>
+  <p class="note">Personal project, built on my own time. It is not affiliated with, endorsed by or based on the code or data of any employer. Everything runs in your browser on sample data generated from a seeded random number generator, and all stores, products and figures are invented. There is no real API: every latency and time on this page is simulated.</p>
 </header>
 
 <main>
@@ -167,7 +167,7 @@
 
 <section class="wrap" id="shows" aria-labelledby="shows-h">
   <h2 id="shows-h">What this shows</h2>
-  <p>I can take a slow, one-at-a-time integration and make it concurrent without overloading the system on the other side: bounded concurrency, fairness between markets, and retries that respect rate limits. The demo is modelled on a problem I solved at work, where price uploads went from 45 minutes per country to 2 minutes for 12 countries using multithreading and semaphores. The numbers on this page come only from the simulation above, not from that system.</p>
+  <p>I can take a slow, one-at-a-time integration and make it concurrent without overloading the system on the other side: bounded concurrency, fairness between markets, and retries that respect rate limits. It is a general pattern I wrote from scratch to explain the idea, with no connection to any employer's systems.</p>
 </section>
 </main>
 

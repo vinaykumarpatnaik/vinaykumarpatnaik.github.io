@@ -74,8 +74,8 @@
 <header class="head wrap">
   <p class="kind">Retail engineering</p>
   <h1>Omnichannel order routing</h1>
-  <p class="sub">An order-sourcing engine that decides how each online order is fulfilled: picked up in store, delivered same day from a nearby store, shipped from a store, shipped to a store, or shipped from the warehouse.</p>
-  <p class="note">This is a personal demo project. It runs in your browser on sample data generated from a seeded random number generator. The stores, products and orders are invented. It is not Alo Yoga's code or data.</p>
+  <p class="sub">I built an order-sourcing engine that decides how each online order gets fulfilled: picked up in store, delivered same day from a nearby store, shipped from a store, shipped to a store, or shipped from the warehouse.</p>
+  <p class="note">Personal project, built on my own time. It is not affiliated with, endorsed by or based on the code or data of any employer. Everything runs in your browser on sample data generated from a seeded random number generator, and all stores, products and figures are invented.</p>
 </header>
 
 <main>
@@ -134,7 +134,7 @@
 
     <div class="panel">
       <h3>Try one order</h3>
-      <p>This routes a single order against start-of-day stock, using the weights above. The blue ring on the plane marks where the customer is.</p>
+      <p>Route one order of your own against start-of-day stock, using the weights above. The blue ring on the plane marks where the customer is.</p>
       <form class="controls mt" id="try" onsubmit="return false">
         <label>Product
           <select id="t-sku"></select></label>
@@ -160,7 +160,7 @@
 
 <section class="wrap" aria-labelledby="res-h">
   <h2 id="res-h">Results from this run</h2>
-  <p>The baseline ships every order from the warehouse and backorders any line the warehouse does not have. Both runs use the same orders and the same starting stock.</p>
+  <p>I compare against a baseline that ships every order from the warehouse and backorders any line the warehouse does not have. Both runs use the same orders and the same starting stock.</p>
   <div class="metrics mt" id="metrics" aria-live="polite"></div>
 
   <div class="two mt">
@@ -196,7 +196,7 @@
 
 <section class="wrap" aria-labelledby="what-h">
   <h2 id="what-h">What this shows</h2>
-  <p>Online demand and store inventory are usually planned apart. This demo shows how I think about joining them: treat every store as a small fulfilment node, be strict about what each one can really promise, and make the trade-offs between speed, cost and store workload explicit and adjustable. It is a simplified model I wrote to explain the idea, not a copy of any system I work on.</p>
+  <p>Online demand and store inventory are usually planned apart. This demo shows how I think about joining them: treat every store as a small fulfilment node, be strict about what each one can really promise, and make the trade-offs between speed, cost and store workload explicit and adjustable. It is a simplified model I wrote to explain the idea, with no connection to any employer's systems.</p>
 </section>
 </main>
 
