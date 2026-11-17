@@ -84,7 +84,7 @@
   .tile h3{font-size:28px;line-height:1.12;letter-spacing:-0.025em;font-weight:700;margin-bottom:10px;text-wrap:balance}
   .tile p{color:var(--muted)}
   .s6{grid-column:span 6}.s4{grid-column:span 4}.s3{grid-column:span 3}.s2{grid-column:span 2}
-  .tile.night{background:var(--night);color:var(--night-ink);padding:48px}
+  .tile.night{background:var(--night);color:var(--night-ink)}
   @media (prefers-color-scheme:dark){.tile.night{box-shadow:inset 0 0 0 1px var(--night-line)}}
   .tile.night p{color:var(--night-muted);max-width:60ch}
   .tile.night h3{font-size:clamp(32px,4.6vw,48px);line-height:1.05;max-width:15ch;margin-bottom:16px}
@@ -122,6 +122,10 @@
 
   /* projects */
   .cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+  .cards.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .group + .group{margin-top:64px}
+  .group-h{font-size:24px;line-height:1.2;font-weight:700;letter-spacing:-0.02em;margin-bottom:6px}
+  .group-note{color:var(--muted);font-size:15px;max-width:62ch;margin-bottom:24px}
   .card{background:var(--surface);border-radius:18px;padding:32px;display:flex;flex-direction:column}
   .card .result{font-size:44px;font-weight:800;letter-spacing:-0.04em;line-height:1;margin-bottom:20px}
   .card h3{font-size:21px;line-height:1.2;font-weight:700;letter-spacing:-0.02em;margin-bottom:6px;text-wrap:balance}
@@ -130,7 +134,7 @@
   .card .more{margin-top:auto;padding-top:18px;font-size:15px;font-weight:500}
 
   /* footer */
-  footer{padding-block:112px 56px;text-align:center}
+  footer{padding-block:96px 56px;text-align:center}
   footer h2{margin-bottom:14px}
   footer .lede{margin:0 auto 32px;max-width:34ch}
   footer .addr{margin-top:24px;color:var(--muted);font-size:15px}
@@ -142,7 +146,8 @@
     .tile,.tile.night{padding:32px}
     .row{grid-template-columns:minmax(0,1fr);gap:4px}
     .skills{grid-template-columns:repeat(2,minmax(0,1fr))}
-    .cards{grid-template-columns:minmax(0,1fr)}
+    .cards,.cards.two{grid-template-columns:minmax(0,1fr)}
+    .group + .group{margin-top:48px}
     .omni{grid-template-columns:minmax(0,1fr);justify-items:center;gap:22px}
     .chans{flex-direction:row;flex-wrap:wrap;justify-content:center}
     .left .chan::after,.right .chan::before{display:none}
@@ -296,7 +301,10 @@
   <section id="projects" class="wrap" aria-labelledby="proj-h">
     <h2 id="proj-h">Projects</h2>
     <p class="lede">Live demos you can run, plus research and analytics work.</p>
-    <div class="cards demo" style="margin-bottom:20px;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr))">
+    <div class="group">
+      <h3 class="group-h">Live demos</h3>
+      <p class="group-note">These are personal projects I built on my own time. They aren't affiliated with or based on the work of any employer. They run on generated sample data in your browser, and every figure comes from each demo's default run.</p>
+    <div class="cards two">
       <article class="card">
         <div class="result">13.8×</div>
         <h3>Concurrent price upload</h3>
@@ -326,7 +334,10 @@
         <a class="more" href="projects/demand-forecast/">Open the live demo</a>
       </article>
     </div>
-    <p class="lede" style="font-size:15px;max-width:none;margin:-4px 0 28px">These are personal projects I built on my own time. They aren't affiliated with or based on the work of any employer. They run on generated sample data in your browser, and every figure comes from each demo's default run.</p>
+    </div>
+    <div class="group">
+      <h3 class="group-h">Research and coursework</h3>
+      <p class="group-note">From grad school at Penn State and undergrad at NIT Calicut.</p>
     <div class="cards">
       <article class="card">
         <div class="result">23%</div>
@@ -347,6 +358,7 @@
         <div class="meta">Penn State Smeal, 2023</div>
         <p>I designed a normalized relational model with 15+ entities to handle 30,000+ products.</p>
       </article>
+    </div>
     </div>
   </section>
 
