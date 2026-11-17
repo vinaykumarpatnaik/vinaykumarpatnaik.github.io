@@ -123,6 +123,8 @@
   /* projects */
   .cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
   .cards.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .card.wide{grid-column:1/-1}
+  .card.wide p{max-width:72ch}
   .group + .group{margin-top:64px}
   .group-h{font-size:24px;line-height:1.2;font-weight:700;letter-spacing:-0.02em;margin-bottom:6px}
   .group-note{color:var(--muted);font-size:15px;max-width:62ch;margin-bottom:24px}
@@ -300,9 +302,9 @@
 
   <section id="projects" class="wrap" aria-labelledby="proj-h">
     <h2 id="proj-h">Projects</h2>
-    <p class="lede">Live demos you can run, plus research and analytics work.</p>
+    <p class="lede">Live demos you can run, a personal tool, and research from school.</p>
     <div class="group">
-      <h3 class="group-h">Live demos</h3>
+      <h3 class="group-h">Retail and data demos</h3>
       <p class="group-note">These are personal projects I built on my own time. They aren't affiliated with or based on the work of any employer. They run on generated sample data in your browser, and every figure comes from each demo's default run.</p>
     <div class="cards two">
       <article class="card">
@@ -334,6 +336,19 @@
         <a class="more" href="projects/demand-forecast/">Open the live demo</a>
       </article>
     </div>
+    </div>
+    <div class="group">
+      <h3 class="group-h">Personal projects</h3>
+      <p class="group-note">Small tools I build for myself. This one runs on made-up transactions, not my real finances.</p>
+      <div class="cards two">
+        <article class="card wide">
+          <div class="result">32.4%</div>
+          <h3>Personal finance dashboard</h3>
+          <div class="meta">Personal project, live demo</div>
+          <p>I wanted one page that shows where my money goes, which charges repeat every month and how long a savings goal will take. It sorts two years of sample transactions with keyword rules, finds recurring charges on its own and includes a what-if savings planner. On the default run the savings rate is 32.4%, and it finds 5 subscriptions costing $1,019.64 a year.</p>
+          <a class="more" href="projects/personal-finance/">Open the live demo</a>
+        </article>
+      </div>
     </div>
     <div class="group">
       <h3 class="group-h">Research and coursework</h3>
