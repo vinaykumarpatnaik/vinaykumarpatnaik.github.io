@@ -84,7 +84,7 @@
 <header class="head wrap">
   <p class="kind">Retail engineering</p>
   <h1>Concurrent price upload</h1>
-  <p class="sub">I push price files for 12 markets to a pricing API twice: one batch at a time, and through a worker pool bounded by a semaphore. Run it and compare the two.</p>
+  <p class="sub">I built this to show how much faster a bulk price upload gets when you run it concurrently, without flooding the API. It uploads prices for 12 markets twice, once one batch at a time and once through a worker pool limited by a semaphore, so you can compare the two.</p>
   <p class="note">Personal project, built on my own time. It is not affiliated with, endorsed by or based on the code or data of any employer. Everything runs in your browser on sample data generated from a seeded random number generator, and all stores, products and figures are invented. There is no real API: every latency and time on this page is simulated.</p>
 </header>
 

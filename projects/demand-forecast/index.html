@@ -103,7 +103,7 @@
 <header class="head wrap">
   <p class="kind">Data</p>
   <h1>Demand forecasting and replenishment</h1>
-  <p class="sub">I clean three years of messy weekly sales, forecast each SKU with Holt-Winters written from scratch, score it on weeks the model never saw, and turn the forecast into a reorder point.</p>
+  <p class="sub">I built this to take messy sales data all the way to a stocking decision. It cleans three years of weekly sales, forecasts each product with Holt-Winters (which I wrote from scratch), tests the forecast on weeks the model never saw, and turns it into a reorder point.</p>
   <p class="note">Personal project, built on my own time. It is not affiliated with, endorsed by or based on the code or data of any employer. Everything runs in your browser on sample data generated from a seeded random number generator, and all stores, products and figures are invented.</p>
 </header>
 
@@ -126,7 +126,7 @@
 
       <div class="panel">
         <h3>1. Data-quality pipeline</h3>
-        <p>I plant problems in the raw rows. The pipeline has to find them without being told where they are.</p>
+        <p>The raw data comes with planted problems, and the pipeline has to find them without being told where they are.</p>
         <ol class="steps" id="steps"></ol>
         <p class="fine" id="injected"></p>
       </div>
@@ -234,7 +234,7 @@
 
   <section aria-labelledby="how-h">
     <h2 id="how-h">How it works</h2>
-    <p>I generate 40 SKUs with 156 weeks of unit sales each. Every SKU has its own level, trend, yearly season, promo spikes and noise, and a few are slow sellers with many zero weeks. Then I damage the data on purpose: duplicated rows, missing weeks, negative quantities and a few extreme values. The pipeline removes duplicates, fills gaps, flips sign errors and caps outliers. Every cleaning rule only looks backwards in time or stays inside its own side of the train and holdout split, so nothing from the holdout leaks into training.</p>
+    <p>The demo generates 40 products with 156 weeks of unit sales each. Every SKU has its own level, trend, yearly season, promo spikes and noise, and a few are slow sellers with many zero weeks. Then it breaks the data on purpose: duplicated rows, missing weeks, negative quantities and a few extreme values. The pipeline removes duplicates, fills gaps, flips sign errors and caps outliers. Every cleaning rule only looks backwards in time or stays inside its own side of the train and holdout split, so nothing from the holdout leaks into training.</p>
     <p>I use additive Holt-Winters with a 52-week season. It keeps three numbers up to date each week: the level, the trend, and a seasonal offset for that week of the year. Three weights control how fast each one reacts. I pick the weights per SKU with a small grid search: fit on weeks 1 to 104, forecast weeks 105 to 130, keep the weights with the lowest error. The last 26 weeks play no part in that choice. The grid is kept small and slow-moving on purpose, because one validation slice is easy to overfit.</p>
     <p>Scoring on a holdout matters because a model always looks good on the data it was fitted to. The baseline is seasonal naive, which repeats the same week from last year. It is hard to beat on seasonal retail data, so it is the right thing to compare against. I use WAPE, total absolute error divided by total units, instead of MAPE. MAPE divides by each week's actual, so it breaks on zero weeks and lets slow sellers with tiny volumes dominate the average. WAPE stays defined and weights errors by the units that matter. Holdout weeks that had to be imputed are left out of the score.</p>
     <p>For replenishment, safety stock is z × σ × √lead time, where σ is the standard deviation of the holdout forecast errors and z comes from the service level. The reorder point is forecast demand over the lead time plus safety stock. The suggested order tops stock up to cover lead time plus one order cycle.</p>
