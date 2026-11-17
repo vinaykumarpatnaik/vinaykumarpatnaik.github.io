@@ -295,7 +295,16 @@
 
   <section id="projects" class="wrap" aria-labelledby="proj-h">
     <h2 id="proj-h">Projects</h2>
-    <p class="lede">Research and analytics work from grad school and college.</p>
+    <p class="lede">Live demos you can run, plus research and analytics work.</p>
+    <div class="cards" style="margin-bottom:20px">
+      <article class="card" style="grid-column:1/-1">
+        <div class="result">13.8×</div>
+        <h3>Concurrent price upload</h3>
+        <div class="meta">Retail engineering, live demo</div>
+        <p>Price batches for 12 markets, uploaded one at a time and then through a worker pool limited by a semaphore. On the default run the concurrent upload finishes in 28.5 s against 394.3 s, in simulated time on generated sample data.</p>
+        <a class="more" href="projects/price-upload/">Open the live demo</a>
+      </article>
+    </div>
     <div class="cards">
       <article class="card">
         <div class="result">23%</div>

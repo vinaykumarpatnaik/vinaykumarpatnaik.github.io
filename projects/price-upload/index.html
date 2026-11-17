@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Concurrent price upload — Vinay Kumar Patnaik</title>
+<meta name="description" content="A live demo that uploads price files for 12 markets to a simulated pricing API, comparing a sequential uploader with a worker pool bounded by a semaphore.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="../shared.css">
+<style>
+  .controls label{flex:1 1 150px}
+  .controls label.wide{flex:2 1 240px}
+  .controls input[type=number]{width:100%}
+  .controls input[type=range]{width:100%}
+  .controls output{color:var(--ink);font-variant-numeric:tabular-nums}
+  .status-line{font-size:15px;color:var(--muted);margin-top:16px;max-width:none}
+
+  .race{display:grid;gap:12px;margin-top:22px;padding-top:20px;border-top:1px solid var(--hair)}
+  .race-row{display:grid;grid-template-columns:104px 1fr;gap:6px 14px;align-items:center}
+  .race-row .name{font-size:15px;font-weight:600;color:var(--ink)}
+  .race-row .txt{grid-column:2;font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .bar.seq > i{background:var(--muted)}
+  .bar > i{transition:none}
+
+  .live{display:flex;flex-wrap:wrap;gap:10px 28px;align-items:center;margin-top:22px;padding-top:20px;border-top:1px solid var(--hair)}
+  .live .read{font-size:15px;color:var(--body);font-variant-numeric:tabular-nums}
+  .live .read b{color:var(--ink);font-weight:700}
+  .permits{display:flex;flex-wrap:wrap;gap:5px;flex:1 1 220px}
+  .permits i{width:12px;height:12px;border-radius:4px;background:var(--field);box-shadow:inset 0 0 0 1px var(--hair)}
+  .permits i.on{background:var(--cta);box-shadow:none}
+
+  .board{margin-top:14px}
+  .board table{table-layout:fixed}
+  .board th.c-code{width:76px}
+  .board th.c-num{width:92px}
+  .board th.c-status{width:108px}
+  .board td.code{font-weight:700;color:var(--ink)}
+  .board td.st{font-size:14px;font-weight:600;color:var(--muted);white-space:nowrap}
+  .board td.st[data-s=uploading]{color:var(--link)}
+  .board td.st[data-s=done]{color:var(--good)}
+
+  .metric .v{font-size:clamp(26px,3.6vw,38px)}
+  .metrics{margin-top:14px;grid-template-columns:repeat(3,1fr)}
+  @media (max-width:640px){.metrics{grid-template-columns:repeat(2,1fr)}}
+
+  .chart-panel{margin-top:14px}
+  .chart-panel h3{margin-bottom:4px}
+  .chart-panel .cap{font-size:14px;color:var(--muted);max-width:none}
+  .chart{position:relative;margin-top:14px}
+  .chart svg{display:block;width:100%;height:auto;overflow:visible}
+  .chart .grid{stroke:var(--hair);stroke-width:1}
+  .chart .axis{fill:var(--muted);font-size:12px;font-family:var(--font);font-variant-numeric:tabular-nums}
+  .chart .lbl{fill:var(--ink);font-size:12px;font-weight:600;font-family:var(--font);font-variant-numeric:tabular-nums}
+  .chart .line{fill:none;stroke:var(--link);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+  .chart .dot{fill:var(--link);stroke:var(--surface);stroke-width:2}
+  .chart .dot.cur{fill:var(--surface);stroke:var(--link);stroke-width:3}
+  .chart .hit{fill:transparent;cursor:default}
+  .chart .hit:focus{outline:none}
+  .chart .hit:focus-visible + .ring, .chart .ring.show{opacity:1}
+  .chart .ring{fill:none;stroke:var(--link);stroke-width:1.5;opacity:0;pointer-events:none}
+  .tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--surface);font-size:13px;font-weight:600;padding:6px 10px;border-radius:8px;white-space:nowrap;transform:translate(-50%,-100%);opacity:0;font-variant-numeric:tabular-nums}
+  .tip.show{opacity:1}
+  details{margin-top:14px}
+  summary{cursor:pointer;font-size:14px;font-weight:600;color:var(--link);min-height:44px;display:inline-flex;align-items:center}
+  details table{max-width:420px}
+
+  #how pre{margin-top:18px;max-width:100%}
+  @media (max-width:560px){
+    .race-row{grid-template-columns:1fr}
+    .race-row .txt{grid-column:1}
+    .board th,.board td{padding-inline:6px}
+    .board th.c-code{width:48px}
+    .board th.c-num{width:74px}
+    .board th.c-status{width:84px}
+    .board td.st{font-size:13px}
+  }
+</style>
+</head>
+<body>
+<nav><div class="wrap"><a class="me" href="/">Vinay Kumar Patnaik</a><a class="back" href="/#projects">All projects</a></div></nav>
+
+<header class="head wrap">
+  <p class="kind">Retail engineering</p>
+  <h1>Concurrent price upload</h1>
+  <p class="sub">I push price files for 12 markets to a pricing API twice: one batch at a time, and through a worker pool bounded by a semaphore. The page runs both and shows the difference.</p>
+  <p class="note">This is a personal demo project. It runs on generated sample data in your browser and is not Alo Yoga's code or data. There is no real API: every latency is simulated, and every time shown is simulated time on a virtual clock, not wall-clock time.</p>
+</header>
+
+<main>
+<section class="wrap" id="demo" aria-labelledby="demo-h">
+  <h2 id="demo-h">Live demo</h2>
+  <div class="panel">
+    <form class="controls" id="controls" onsubmit="return false">
+      <label class="wide" for="permits">Global permits: <output id="permitsOut" for="permits"></output>
+        <input type="range" id="permits" min="1" max="32" step="1" value="16">
+      </label>
+      <label for="perMarket">Per-market limit
+        <input type="number" id="perMarket" min="1" max="8" step="1" value="4" inputmode="numeric">
+      </label>
+      <label for="seed">Seed
+        <input type="number" id="seed" min="1" max="999999" step="1" value="42" inputmode="numeric">
+      </label>
+      <button type="button" class="btn btn-primary" id="run">Run again</button>
+    </form>
+    <p class="status-line" id="status" role="status" aria-live="polite">Preparing the run.</p>
+
+    <div class="race">
+      <div class="race-row">
+        <span class="name">Concurrent</span>
+        <div class="bar" aria-hidden="true"><i id="concBar"></i></div>
+        <span class="txt" id="concTxt"></span>
+      </div>
+      <div class="race-row">
+        <span class="name">Sequential</span>
+        <div class="bar seq" aria-hidden="true"><i id="seqBar"></i></div>
+        <span class="txt" id="seqTxt"></span>
+      </div>
+    </div>
+
+    <div class="live">
+      <span class="read">Permits in use: <b id="inUse">0</b> / <b id="inUseMax">0</b></span>
+      <span class="read">Simulated time: <b id="clock">0.0 s</b></span>
+      <div class="permits" id="permitDots" aria-hidden="true"></div>
+    </div>
+
+    <div class="board scroll">
+      <table>
+        <thead><tr><th class="c-code">Market</th><th>Progress</th><th class="num c-num">Batches</th><th class="c-status">Status</th></tr></thead>
+        <tbody id="board"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="metrics" id="metrics" aria-live="polite">
+    <div class="metric"><div class="v" id="mSeq">…</div><div class="l" id="mSeqL">Sequential total, simulated</div></div>
+    <div class="metric"><div class="v" id="mConc">…</div><div class="l">Concurrent total, simulated</div></div>
+    <div class="metric"><div class="v" id="mSpeed">…</div><div class="l">Speedup</div></div>
+    <div class="metric"><div class="v" id="mPeak">…</div><div class="l">Peak permits in use</div></div>
+    <div class="metric"><div class="v" id="mSkus">…</div><div class="l" id="mSkusL">SKUs priced</div></div>
+    <div class="metric"><div class="v" id="mRetries">…</div><div class="l">Retries handled</div></div>
+  </div>
+
+  <div class="panel chart-panel">
+    <h3>Total upload time by permit count</h3>
+    <p class="cap" id="chartCap">Running the simulation at each permit count.</p>
+    <div class="chart" id="chart"></div>
+    <details>
+      <summary>View as table</summary>
+      <div class="scroll"><table>
+        <thead><tr><th class="num">Permits</th><th class="num">Total time</th><th class="num">Speedup</th></tr></thead>
+        <tbody id="sweepTable"></tbody>
+      </table></div>
+    </details>
+  </div>
+</section>
+
+<section class="wrap" id="how" aria-labelledby="how-h">
+  <h2 id="how-h">How it works</h2>
+  <p>Each market has a queue of price batches of up to <span id="hBatch"></span> SKUs. The sequential uploader sends one batch, waits for the response, then sends the next. The concurrent uploader starts a few workers per market. Every worker must take a permit from one shared semaphore before it calls the API, and gives it back when the call ends.</p>
+  <p>I use a semaphore instead of firing every request at once with <code>Promise.all</code> because a pricing API has rate limits. Unbounded requests turn into a wall of 429 responses and timeouts. A fixed number of permits gives back-pressure: when the API slows down, permits come back slower, and the uploader slows down with it. Waiters are served first in, first out, so no worker is skipped.</p>
+  <p>The per-market limit is the number of workers each market gets. Without it, the market with the most batches could hold most of the permits and the small markets would wait behind it. With it, the big market finishes last but never blocks the others.</p>
+  <p>A small share of simulated calls fail with a 429 or a timeout. The worker keeps its permit, waits with exponential backoff, and tries again, up to <span id="hRetries"></span> retries. Holding the permit while backing off is deliberate, because it lowers the request rate exactly when the API asks for that. The code below is read from the functions this page is running.</p>
+  <pre><code id="excerpt"></code></pre>
+</section>
+
+<section class="wrap" id="shows" aria-labelledby="shows-h">
+  <h2 id="shows-h">What this shows</h2>
+  <p>I can take a slow, one-at-a-time integration and make it concurrent without overloading the system on the other side: bounded concurrency, fairness between markets, and retries that respect rate limits. The demo is modelled on a problem I solved at work, where price uploads went from 45 minutes per country to 2 minutes for 12 countries using multithreading and semaphores. The numbers on this page come only from the simulation above, not from that system.</p>
+</section>
+</main>
+
+<footer><div class="wrap"><span>© 2026 Vinay Kumar Patnaik</span><a href="/#projects">All projects</a></div></footer>
+
+<script>
+'use strict';
+
+/* ---------- constants ---------- */
+const MARKET_CODES = ['US','CA','MX','BR','UK','DE','FR','ES','IT','AU','JP','SG'];
+const BATCH_SIZE = 500;        // SKUs per batch
+const MAX_RETRIES = 3;         // per batch
+const BACKOFF_MS = 300;        // doubles on every retry
+const TIMEOUT_MS = 2000;       // simulated client timeout
+const SWEEP = [1, 2, 4, 8, 16, 32];
+const PLAYBACK_MS = 5000;      // wall-clock length of the animation
+
+/* ---------- seeded data ---------- */
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+function makeMarkets(seed) {
+  const rand = mulberry32(seed);
+  return MARKET_CODES.map((code, index) => {
+    const skus = 19501 + Math.floor(rand() * 40500);          // 40 to 120 batches
+    const batches = [];
+    for (let i = 0, left = skus; left > 0; i++, left -= BATCH_SIZE) {
+      // Each batch carries its own scripted API behaviour, so the outcome
+      // does not depend on the order in which workers happen to send it.
+      const attempts = [];
+      for (;;) {
+        const r = rand();
+        const ms = 150 + Math.floor(rand() * 451);             // 150 to 600 ms
+        if (attempts.length < MAX_RETRIES && r < 0.04) {
+          attempts.push({ ms: 40 + Math.floor(ms / 6), status: 429 });
+        } else if (attempts.length < MAX_RETRIES && r < 0.06) {
+          attempts.push({ ms: TIMEOUT_MS, status: 'timeout' });
+        } else {
+          attempts.push({ ms, status: 200 });
+          break;
+        }
+      }
+      batches.push({ market: index, id: i, skus: Math.min(BATCH_SIZE, left), attempts });
+    }
+    return { code, index, skus, batches };
+  });
+}
+
+/* ---------- virtual clock ---------- */
+// A macrotask yield. Every pending promise callback runs before it resolves,
+// so when it returns all tasks are parked on a sleep or a semaphore.
+const settle = (() => {
+  if (typeof MessageChannel === 'undefined') return () => new Promise(r => setTimeout(r, 0));
+  const ch = new MessageChannel(), q = [];
+  ch.port1.onmessage = () => q.shift()();
+  return () => new Promise(r => { q.push(r); ch.port2.postMessage(0); });
+})();
+
+class VirtualClock {
+  constructor() { this.now = 0; this.seq = 0; this.heap = []; }
+  sleep(ms) {
+    return new Promise(resolve => this.push({ t: this.now + ms, seq: this.seq++, resolve }));
+  }
+  less(a, b) { return a.t < b.t || (a.t === b.t && a.seq < b.seq); }
+  push(e) {
+    const h = this.heap; let i = h.push(e) - 1;
+    while (i > 0) {
+      const p = (i - 1) >> 1;
+      if (!this.less(h[i], h[p])) break;
+      [h[i], h[p]] = [h[p], h[i]]; i = p;
+    }
+  }
+  pop() {
+    const h = this.heap, top = h[0], last = h.pop();
+    if (h.length) {
+      h[0] = last;
+      for (let i = 0;;) {
+        let m = i; const l = 2 * i + 1, r = l + 1;
+        if (l < h.length && this.less(h[l], h[m])) m = l;
+        if (r < h.length && this.less(h[r], h[m])) m = r;
+        if (m === i) break;
+        [h[i], h[m]] = [h[m], h[i]]; i = m;
+      }
+    }
+    return top;
+  }
+  // Wake sleepers one at a time in time order, jumping the clock forward.
+  async drain() {
+    await settle();
+    while (this.heap.length) {
+      const e = this.pop();
+      this.now = e.t;
+      e.resolve();
+      await settle();
+    }
+  }
+}
+
+/* ---------- simulated pricing API ---------- */
+class FakePricingApi {
+  constructor(clock) { this.clock = clock; }
+  async putPrices(batch, attempt) {
+    const scripted = batch.attempts[attempt];
+    await this.clock.sleep(scripted.ms);
+    if (scripted.status !== 200) {
+      const err = new Error('Upload failed: ' + scripted.status);
+      err.status = scripted.status;
+      err.retryable = true;
+      throw err;
+    }
+    return { accepted: batch.skus };
+  }
+}
+
+/* ---------- the core: semaphore, retry, worker (shown in the excerpt) ---------- */
+class Semaphore {
+  constructor(permits) {
+    this.permits = permits;
+    this.inUse = 0;
+    this.peak = 0;
+    this.waiters = [];   // FIFO queue of resolve functions
+  }
+  acquire() {
+    if (this.inUse < this.permits) {
+      this.inUse++;
+      this.peak = Math.max(this.peak, this.inUse);
+      return Promise.resolve();
+    }
+    return new Promise(resolve => this.waiters.push(resolve));
+  }
+  release() {
+    const next = this.waiters.shift();
+    if (next) next();   // hand the permit straight to the oldest waiter
+    else this.inUse--;
+  }
+}
+
+async function uploadWithRetry(api, batch, log) {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await api.putPrices(batch, attempt);
+    } catch (err) {
+      if (!err.retryable || attempt >= MAX_RETRIES) throw err;
+      log.retry(batch, err.status);
+      // 429 or timeout: back off and keep the permit
+      await api.clock.sleep(BACKOFF_MS * 2 ** attempt);
+    }
+  }
+}
+
+async function worker(queue, globalPermits, api, log) {
+  while (queue.next < queue.batches.length) {
+    const batch = queue.batches[queue.next++];
+    await globalPermits.acquire();
+    log.start(batch);
+    try {
+      await uploadWithRetry(api, batch, log);
+      log.done(batch);
+    } finally {
+      globalPermits.release();
+    }
+  }
+}
+
+async function uploadConcurrently(markets, permits, perMarket, api, log) {
+  const globalPermits = new Semaphore(permits);
+  const queues = markets.map(m => ({ batches: m.batches, next: 0 }));
+  const workers = [];
+  for (let w = 0; w < perMarket; w++) {       // per-market limit = workers per market
+    for (const queue of queues) workers.push(worker(queue, globalPermits, api, log));
+  }
+  await Promise.all(workers);
+  return globalPermits;
+}
+
+async function uploadSequentially(markets, api, log) {
+  for (const market of markets) {
+    for (const batch of market.batches) {
+      log.start(batch);
+      await uploadWithRetry(api, batch, log);
+      log.done(batch);
+    }
+  }
+}
+
+/* ---------- running a simulation ---------- */
+async function simulate(markets, mode, permits, perMarket) {
+  const clock = new VirtualClock();
+  const api = new FakePricingApi(clock);
+  const events = [];
+  let retries = 0, skus = 0, sem = null;
+  const log = {
+    start: b => events.push({ t: clock.now, k: 's', m: b.market }),
+    done: b => { skus += b.skus; events.push({ t: clock.now, k: 'd', m: b.market }); },
+    retry: (b, status) => { retries++; events.push({ t: clock.now, k: 'r', m: b.market, status }); }
+  };
+  let failed = null;
+  const job = (mode === 'seq'
+    ? uploadSequentially(markets, api, log)
+    : uploadConcurrently(markets, permits, perMarket, api, log).then(s => { sem = s; })
+  ).catch(e => { failed = e; });
+  await clock.drain();
+  await job;
+  if (failed) throw failed;
+  return { total: clock.now, events, retries, skus, peak: sem ? sem.peak : 1 };
+}
+
+/* ---------- formatting ---------- */
+const $ = id => document.getElementById(id);
+const nf = new Intl.NumberFormat('en-US');
+const secs = ms => (ms / 1000).toFixed(1) + ' s';
+function minSec(ms) {
+  const s = Math.round(ms / 1000), m = Math.floor(s / 60);
+  return m ? m + ' min ' + (s % 60) + ' s' : s + ' s';
+}
+const times = x => (x >= 100 ? x.toFixed(0) : x.toFixed(1)) + '×';
+
+/* ---------- board ---------- */
+let rows = [];
+function buildBoard(markets, permits) {
+  const tb = $('board'); tb.textContent = '';
+  rows = markets.map(m => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td class="code"></td><td><div class="bar" aria-hidden="true"><i></i></div></td><td class="num"></td><td class="st"></td>';
+    tr.children[0].textContent = m.code;
+    tb.appendChild(tr);
+    return { fill: tr.querySelector('i'), num: tr.children[2], st: tr.children[3], total: m.batches.length, shown: '' };
+  });
+  const dots = $('permitDots'); dots.textContent = '';
+  for (let i = 0; i < permits; i++) dots.appendChild(document.createElement('i'));
+  $('inUseMax').textContent = permits;
+}
+
+function paint(state, run, t) {
+  const totalBatches = run.totalBatches;
+  let concDone = 0;
+  rows.forEach((r, i) => {
+    const done = state.done[i], fl = state.flying[i];
+    concDone += done;
+    const s = done === r.total ? 'done' : (fl > 0 || done > 0) ? 'uploading' : 'queued';
+    const key = done + s;
+    if (key === r.shown) return;
+    r.shown = key;
+    r.fill.style.width = (100 * done / r.total) + '%';
+    r.num.textContent = done + ' / ' + r.total;
+    r.st.textContent = s; r.st.dataset.s = s;
+  });
+  $('inUse').textContent = state.inUse;
+  const dots = $('permitDots').children;
+  for (let i = 0; i < dots.length; i++) dots[i].classList.toggle('on', i < state.inUse);
+  $('clock').textContent = secs(t);
+  $('concBar').style.width = (100 * concDone / totalBatches) + '%';
+  $('concTxt').textContent = nf.format(concDone) + ' of ' + nf.format(totalBatches) + ' batches' +
+    (concDone === totalBatches ? ', finished at ' + secs(run.conc.total) : '');
+  $('seqBar').style.width = (100 * state.seqDone / totalBatches) + '%';
+  $('seqTxt').textContent = nf.format(state.seqDone) + ' of ' + nf.format(totalBatches) + ' batches' +
+    (concDone === totalBatches ? ' at the same moment. It finishes at ' + secs(run.seq.total) + '.' : '');
+}
+
+/* ---------- playback of the recorded run ---------- */
+function play(run, token) {
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const n = run.markets.length;
+  const state = { done: new Array(n).fill(0), flying: new Array(n).fill(0), inUse: 0, seqDone: 0 };
+  const ev = run.conc.events, seqDone = run.seq.events.filter(e => e.k === 'd');
+  let i = 0, j = 0;
+  const advance = t => {
+    for (; i < ev.length && ev[i].t <= t; i++) {
+      const e = ev[i];
+      if (e.k === 's') { state.flying[e.m]++; state.inUse++; }
+      else if (e.k === 'd') { state.flying[e.m]--; state.inUse--; state.done[e.m]++; }
+    }
+    while (j < seqDone.length && seqDone[j].t <= t) j++;
+    state.seqDone = j;
+    paint(state, run, t);
+  };
+  return new Promise(resolve => {
+    if (reduce) { advance(run.conc.total); return resolve(); }
+    const speed = run.conc.total / PLAYBACK_MS;
+    let t0 = null;
+    const frame = now => {
+      if (token !== runToken) return resolve();
+      if (t0 === null) t0 = now;
+      const t = Math.min(run.conc.total, (now - t0) * speed);
+      advance(t);
+      if (t < run.conc.total) requestAnimationFrame(frame); else resolve();
+    };
+    requestAnimationFrame(frame);
+  });
+}
+
+/* ---------- chart ---------- */
+let lastSweep = null;
+function drawChart() {
+  if (!lastSweep) return;
+  const { points, current } = lastSweep;
+  const box = $('chart');
+  const W = Math.max(260, box.clientWidth), H = 240;
+  const L = 46, R = 26, T = 26, B = 40;
+  const maxS = Math.max(...points.map(p => p.total)) / 1000;
+  const step = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000].find(s => maxS / s <= 4);
+  const top = Math.ceil(maxS / step) * step;
+  const x = i => L + (W - L - R) * (points.length === 1 ? 0.5 : i / (points.length - 1));
+  const y = ms => T + (H - T - B) * (1 - ms / 1000 / top);
+  let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-labelledby="chartT"><title id="chartT">' +
+    'Total simulated upload time by permit count: ' + points.map(p => p.permits + ' permits ' + secs(p.total)).join(', ') + '</title>';
+  for (let v = 0; v <= top; v += step) {
+    s += '<line class="grid" x1="' + L + '" x2="' + (W - R) + '" y1="' + y(v * 1000) + '" y2="' + y(v * 1000) + '"/>' +
+         '<text class="axis" x="' + (L - 8) + '" y="' + (y(v * 1000) + 4) + '" text-anchor="end">' + v + ' s</text>';
+  }
+  points.forEach((p, i) => {
+    s += '<text class="axis" x="' + x(i) + '" y="' + (H - B + 18) + '" text-anchor="middle">' + p.permits + '</text>';
+  });
+  s += '<text class="axis" x="' + (L + (W - L - R) / 2) + '" y="' + (H - 4) + '" text-anchor="middle">Global permits</text>';
+  s += '<path class="line" d="' + points.map((p, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(p.total).toFixed(1)).join(' ') + '"/>';
+  points.forEach((p, i) => {
+    const cur = p.permits === current, cx = x(i), cy = y(p.total);
+    s += '<circle class="dot' + (cur ? ' cur' : '') + '" cx="' + cx + '" cy="' + cy + '" r="' + (cur ? 6 : 5) + '"/>';
+    const gap = (W - L - R) / Math.max(1, points.length - 1);
+    const lastIdx = points.length - 1, curIdx = points.findIndex(q => q.permits === current);
+    const roomy = gap >= 90 || lastIdx - curIdx !== 1;
+    if (i === 0 || cur || (i === lastIdx && roomy)) {
+      const anchor = i === 0 ? 'start' : i === points.length - 1 ? 'end' : 'middle';
+      const dx = i === 0 ? 10 : i === points.length - 1 ? 4 : 0;
+      s += '<text class="lbl" x="' + (cx + dx) + '" y="' + (cy - 12) + '" text-anchor="' + anchor + '">' + secs(p.total) + '</text>';
+    }
+    s += '<circle class="hit" data-i="' + i + '" cx="' + cx + '" cy="' + cy + '" r="18" tabindex="0" role="img" aria-label="' +
+         p.permits + ' permits: ' + secs(p.total) + ', ' + times(p.speedup) + ' faster than sequential"/>' +
+         '<circle class="ring" cx="' + cx + '" cy="' + cy + '" r="10"/>';
+  });
+  s += '</svg><div class="tip" id="tip"></div>';
+  box.innerHTML = s;
+  const tip = $('tip');
+  box.querySelectorAll('.hit').forEach(h => {
+    const p = points[+h.dataset.i];
+    const show = () => {
+      tip.textContent = p.permits + (p.permits === 1 ? ' permit: ' : ' permits: ') + secs(p.total) + ', ' + times(p.speedup);
+      const half = tip.offsetWidth / 2;
+      tip.style.left = Math.min(W - half, Math.max(half, +h.getAttribute('cx'))) + 'px';
+      tip.style.top = (+h.getAttribute('cy') - 14) + 'px';
+      tip.classList.add('show'); h.nextElementSibling.classList.add('show');
+    };
+    const hide = () => { tip.classList.remove('show'); h.nextElementSibling.classList.remove('show'); };
+    h.addEventListener('pointerenter', show); h.addEventListener('pointerleave', hide);
+    h.addEventListener('focus', show); h.addEventListener('blur', hide);
+  });
+}
+
+function showSweep(run) {
+  lastSweep = { points: run.sweep, current: run.permits };
+  drawChart();
+  $('sweepTable').innerHTML = run.sweep.map(p =>
+    '<tr><td class="num">' + p.permits + '</td><td class="num">' + secs(p.total) + '</td><td class="num">' + times(p.speedup) + '</td></tr>').join('');
+  // Where do returns diminish? The first doubling that saves less than 25% of the time.
+  let flat = null;
+  for (let i = 1; i < run.sweep.length; i++) {
+    const a = run.sweep[i - 1], b = run.sweep[i];
+    if (b.permits === a.permits * 2 && b.total > a.total * 0.75) { flat = [a, b]; break; }
+  }
+  const last = run.sweep[run.sweep.length - 1];
+  $('chartCap').textContent = 'Same data, per-market limit of ' + run.perMarket + ', simulated at each permit count. The hollow dot is this run. ' +
+    (flat
+      ? 'Going from ' + flat[0].permits + ' to ' + flat[1].permits + ' permits only cuts the time from ' + secs(flat[0].total) + ' to ' + secs(flat[1].total) +
+        ', because the per-market limit and the largest market set the floor.'
+      : 'Every doubling still saves at least a quarter of the time, but the gain shrinks: ' + last.permits + ' permits give ' +
+        times(last.speedup) + ', not ' + last.permits + '×.');
+}
+
+/* ---------- one full run ---------- */
+let runToken = 0;
+const clampInt = (el, lo, hi, dflt) => {
+  let v = parseInt(el.value, 10);
+  if (!Number.isFinite(v)) v = dflt;
+  v = Math.min(hi, Math.max(lo, v));
+  el.value = v;
+  return v;
+};
+
+async function runDemo() {
+  const token = ++runToken;
+  const permits = clampInt($('permits'), 1, 32, 16);
+  const perMarket = clampInt($('perMarket'), 1, 8, 4);
+  const seed = clampInt($('seed'), 1, 999999, 42);
+  $('permitsOut').textContent = permits;
+  ['mSeq', 'mConc', 'mSpeed', 'mPeak', 'mSkus', 'mRetries'].forEach(id => { $(id).textContent = '…'; });
+  $('status').textContent = 'Simulating the uploads on the virtual clock.';
+
+  const markets = makeMarkets(seed);
+  const totalBatches = markets.reduce((a, m) => a + m.batches.length, 0);
+  buildBoard(markets, permits);
+
+  const seq = await simulate(markets, 'seq');
+  const conc = await simulate(markets, 'conc', permits, perMarket);
+  const counts = SWEEP.includes(permits) ? SWEEP : SWEEP.concat(permits).sort((a, b) => a - b);
+  const sweep = [];
+  for (const n of counts) {
+    const r = n === permits ? conc : await simulate(markets, 'conc', n, perMarket);
+    sweep.push({ permits: n, total: r.total, speedup: seq.total / r.total });
+  }
+  if (token !== runToken) return;
+
+  const run = { markets, totalBatches, permits, perMarket, seed, seq, conc, sweep };
+  window.__lastRun = run;
+  const speed = conc.total / PLAYBACK_MS;
+  $('status').textContent = 'Playing back ' + secs(conc.total) + ' of simulated time at about ' + times(speed).replace('×', '') + ' times real speed.';
+  await play(run, token);
+  if (token !== runToken) return;
+
+  $('mSeq').textContent = secs(seq.total);
+  $('mSeqL').textContent = 'Sequential total, simulated (' + minSec(seq.total).replace(/ /g, '\u00a0') + ')';
+  $('mConc').textContent = secs(conc.total);
+  $('mSpeed').textContent = times(seq.total / conc.total);
+  $('mPeak').textContent = conc.peak + ' / ' + permits;
+  $('mSkus').textContent = nf.format(conc.skus);
+  $('mSkusL').textContent = 'SKUs priced in ' + nf.format(totalBatches) + ' batches';
+  $('mRetries').textContent = nf.format(conc.retries);
+  showSweep(run);
+  $('status').textContent = 'Run finished. Seed ' + seed + ', ' + permits + ' global permits, ' + perMarket + ' per market: ' +
+    secs(conc.total) + ' concurrent against ' + secs(seq.total) + ' sequential, both in simulated time.';
+  document.body.dataset.done = String(token);
+}
+
+/* ---------- wiring ---------- */
+$('hBatch').textContent = BATCH_SIZE;
+$('hRetries').textContent = MAX_RETRIES;
+$('excerpt').textContent = [Semaphore, uploadWithRetry, worker].map(f => f.toString()).join('\n\n');
+$('permitsOut').textContent = $('permits').value;
+$('permits').addEventListener('input', () => { $('permitsOut').textContent = $('permits').value; });
+['permits', 'perMarket', 'seed'].forEach(id => $(id).addEventListener('change', runDemo));
+$('run').addEventListener('click', runDemo);
+let rz = 0;
+addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(drawChart, 120); });
+runDemo();
+</script>
+</body>
+</html>
