@@ -1,0 +1,761 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Omnichannel order routing — Vinay Kumar Patnaik</title>
+<meta name="description" content="A live demo of an order-sourcing engine that decides whether each online order is picked up in store, delivered same day, shipped from a store, shipped to a store or shipped from the warehouse. Runs on generated sample data in your browser.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="../shared.css">
+<style>
+  .stack{display:grid;gap:18px}
+  .controls label{flex:1 1 150px}
+  .controls label.narrow{flex:0 1 120px}
+  .controls input[type=range]{width:100%}
+  .controls input[type=number],.controls select{width:100%}
+  .controls output{color:var(--ink);font-variant-numeric:tabular-nums}
+  .status{font-size:15px;color:var(--body);margin-top:16px;max-width:none}
+  .stage{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:28px;align-items:start}
+  @media (max-width:860px){.stage{grid-template-columns:minmax(0,1fr)}}
+  .plane{display:block;width:100%;height:auto;background:var(--field);border-radius:14px;cursor:pointer;touch-action:manipulation}
+  .plane text{font-family:var(--font);font-size:10.5px;font-weight:600;fill:var(--ink);paint-order:stroke;stroke:var(--field);stroke-width:3px;stroke-linejoin:round;text-anchor:middle;pointer-events:none}
+  @media (max-width:560px){.plane text{font-size:13px}}
+  .m{stroke-width:1.4}
+  .m-pickup{fill:var(--good);stroke:var(--good)}
+  .m-sameday{fill:var(--link);stroke:var(--link)}
+  .m-shipFromStore{fill:var(--warn);stroke:var(--warn)}
+  .m-shipToStore{fill:none;stroke:var(--good)}
+  .m-warehouse{fill:var(--muted);stroke:var(--muted)}
+  .m-split{fill:none;stroke:var(--ink)}
+  .m-backorder{fill:none;stroke:var(--bad);stroke-width:1.8;stroke-linecap:round}
+  .dots .m{opacity:.9}
+  .node{fill:var(--surface);stroke:var(--ink);stroke-width:2.2}
+  .node-wh{fill:var(--ink);stroke:var(--ink)}
+  .sel-ring{fill:none;stroke:var(--ink);stroke-width:2}
+  .sel-line{stroke:var(--ink);stroke-width:1.6;fill:none}
+  .sel-dash{stroke:var(--ink);stroke-width:1.2;stroke-dasharray:3 4;fill:none}
+  .sel-radius{stroke:var(--link);stroke-width:1.2;stroke-dasharray:5 5;fill:none}
+  .try-mark{fill:none;stroke:var(--cta);stroke-width:2.2}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 16px;list-style:none;margin-top:12px;font-size:13px;color:var(--body)}
+  .legend li{display:inline-flex;align-items:center;gap:6px}
+  .legend svg{width:16px;height:16px;flex:none}
+  .hint{font-size:14px;color:var(--muted);margin-top:8px}
+  .why h3{margin-bottom:6px}
+  .why .decision{color:var(--ink);font-weight:600}
+  .why ul{margin:8px 0 0 18px;color:var(--body);font-size:15px}
+  .why table{font-size:13.5px;margin-top:12px}
+  .why td,.why th{padding:7px 8px}
+  .why td:first-child{min-width:150px}
+  .why tr.win td{color:var(--ink);font-weight:600}
+  .why .small{font-size:14px;color:var(--muted);margin-top:10px}
+  .rowbtn{font:inherit;font-weight:600;color:var(--link);background:none;border:0;cursor:pointer;min-height:44px;min-width:44px;padding:0 6px;text-align:left;white-space:nowrap}
+  .rowbtn:hover{text-decoration:underline}
+  tr.sel td{background:var(--tag)}
+  .orders td{padding-block:2px}
+  .pager{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px;font-size:14px;color:var(--muted)}
+  .pager .btn{padding:0 16px}
+  .tablehead{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:end;justify-content:space-between;margin-bottom:10px}
+  .two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+  @media (max-width:860px){.two{grid-template-columns:minmax(0,1fr)}}
+  .metric .v{font-size:clamp(28px,3.6vw,38px)}
+  .controls label.wide{flex:1 1 220px}
+  .metric .v small{font-size:.5em;letter-spacing:-.01em;font-weight:700}
+  .metric .l b{color:var(--body);font-weight:600}
+  td .bar{min-width:60px}
+  .mt{margin-top:18px}
+  h3 + p{margin-top:6px}
+</style>
+</head>
+<body>
+<nav><div class="wrap"><a class="me" href="/">Vinay Kumar Patnaik</a><a class="back" href="/#projects">All projects</a></div></nav>
+
+<header class="head wrap">
+  <p class="kind">Retail engineering</p>
+  <h1>Omnichannel order routing</h1>
+  <p class="sub">An order-sourcing engine that decides how each online order is fulfilled: picked up in store, delivered same day from a nearby store, shipped from a store, shipped to a store, or shipped from the warehouse.</p>
+  <p class="note">This is a personal demo project. It runs in your browser on sample data generated from a seeded random number generator. The stores, products and orders are invented. It is not Alo Yoga's code or data.</p>
+</header>
+
+<main>
+<section class="wrap" aria-labelledby="demo-h">
+  <h2 id="demo-h">Live demo</h2>
+  <p>The page generates a region with <span id="n-stores">ten</span> stores, one warehouse and <span id="n-orders">400</span> orders, then routes every order. Move a slider and the whole day is routed again.</p>
+
+  <div class="stack mt">
+    <div class="panel">
+      <form class="controls" id="controls" onsubmit="return false">
+        <label>Distance weight <output id="o-wd"></output>
+          <input type="range" id="w-dist" min="0" max="10" step="1" value="5"></label>
+        <label>Balance load weight <output id="o-wl"></output>
+          <input type="range" id="w-load" min="0" max="10" step="1" value="3"></label>
+        <label>Protect stock weight <output id="o-ws"></output>
+          <input type="range" id="w-stock" min="0" max="10" step="1" value="3"></label>
+        <label>Same-day radius <output id="o-r"></output>
+          <input type="range" id="radius" min="5" max="40" step="1" value="18"></label>
+        <label class="narrow">Seed
+          <input type="number" id="seed" min="1" max="999999" step="1" value="2026"></label>
+        <button type="button" class="btn btn-primary" id="run">Route orders again</button>
+      </form>
+      <p class="status" id="status" role="status" aria-live="polite"></p>
+    </div>
+
+    <div class="panel">
+      <div class="stage">
+        <div>
+          <h3 id="plane-h">The region</h3>
+          <p class="hint" id="plane-d">Each small mark is an order at the customer's address. Rings are stores, and a bigger ring means more picking capacity left. The filled square is the warehouse. Tap an order to see why it was routed that way.</p>
+          <svg class="plane mt" id="plane" viewBox="0 0 400 400" role="img" aria-labelledby="plane-h plane-d"></svg>
+          <ul class="legend" id="legend" aria-label="Legend: order marks by fulfilment method"></ul>
+        </div>
+        <div class="why" id="why" aria-live="polite"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="tablehead">
+        <h3>Orders</h3>
+        <label>Show
+          <select id="filter"></select></label>
+      </div>
+      <div class="scroll">
+        <table class="orders">
+          <thead><tr><th>Order</th><th>Asked for</th><th class="num">Lines</th><th>Routed as</th><th>From</th><th class="num">Distance</th></tr></thead>
+          <tbody id="orders-body"></tbody>
+        </table>
+      </div>
+      <div class="pager">
+        <button type="button" class="btn btn-ghost" id="prev">Previous</button>
+        <button type="button" class="btn btn-ghost" id="next">Next</button>
+        <span id="page-info" aria-live="polite"></span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Try one order</h3>
+      <p>This routes a single order against start-of-day stock, using the weights above. The blue ring on the plane marks where the customer is.</p>
+      <form class="controls mt" id="try" onsubmit="return false">
+        <label>Product
+          <select id="t-sku"></select></label>
+        <label class="narrow">Quantity
+          <select id="t-qty"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></label>
+        <label>Method
+          <select id="t-method">
+            <option value="sameday">Same-day delivery</option>
+            <option value="pickup">Pickup at a store</option>
+            <option value="standard">Standard delivery</option>
+          </select></label>
+        <label>Pickup store
+          <select id="t-store"></select></label>
+        <label class="wide">Customer position, east <output id="o-tx"></output>
+          <input type="range" id="t-x" min="0" max="100" step="1" value="40"></label>
+        <label class="wide">Customer position, north <output id="o-ty"></output>
+          <input type="range" id="t-y" min="0" max="100" step="1" value="55"></label>
+      </form>
+      <div class="why mt" id="try-why" aria-live="polite"></div>
+    </div>
+  </div>
+</section>
+
+<section class="wrap" aria-labelledby="res-h">
+  <h2 id="res-h">Results from this run</h2>
+  <p>The baseline ships every order from the warehouse and backorders any line the warehouse does not have. Both runs use the same orders and the same starting stock.</p>
+  <div class="metrics mt" id="metrics" aria-live="polite"></div>
+
+  <div class="two mt">
+    <div class="panel">
+      <h3>Orders by fulfilment method</h3>
+      <div class="scroll mt">
+        <table>
+          <thead><tr><th>Method</th><th class="num">Orders</th><th class="num">Share</th><th><span class="sr">&nbsp;</span></th></tr></thead>
+          <tbody id="method-body"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>Stores after the run</h3>
+      <div class="scroll mt">
+        <table>
+          <thead><tr><th>Node</th><th class="num">Orders picked</th><th class="num">Capacity</th><th class="num">Sellable units left</th></tr></thead>
+          <tbody id="node-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="wrap" aria-labelledby="how-h">
+  <h2 id="how-h">How it works</h2>
+  <p>Every store and the warehouse holds stock for <span id="n-skus">25</span> products, a safety-stock level and a daily picking capacity. What a node can promise is its available-to-promise quantity: on hand, minus units already reserved, minus safety stock.</p>
+  <p>For each order I build every way of assigning its lines to nodes that pass the hard checks: enough available-to-promise stock and picking capacity left. A plan counts as pickup today only if the chosen store has every line, and as same day only if one store inside the radius has every line.</p>
+  <p>Each plan gets a cost. Distance, how full the node would be, and how much of its sellable stock the order would use are weighted by the sliders. A split adds <span id="c-split"></span> points per extra parcel and a missed pickup or same-day promise adds <span id="c-promise"></span>. The cheapest plan wins and its stock is reserved before the next order is routed.</p>
+  <p>The fallbacks come out of the same scoring. If the pickup store is short, the order ships to that store from another node. If no single node has every line, the split penalty keeps the number of parcels low. Lines nobody can supply are backordered. This is the function that scores and picks, printed from the code running on this page:</p>
+  <pre class="mt"><code id="excerpt"></code></pre>
+</section>
+
+<section class="wrap" aria-labelledby="what-h">
+  <h2 id="what-h">What this shows</h2>
+  <p>Online demand and store inventory are usually planned apart. This demo shows how I think about joining them: treat every store as a small fulfilment node, be strict about what each one can really promise, and make the trade-offs between speed, cost and store workload explicit and adjustable. It is a simplified model I wrote to explain the idea, not a copy of any system I work on.</p>
+</section>
+</main>
+
+<footer><div class="wrap"><span>© 2026 Vinay Kumar Patnaik</span><a href="/#projects">All projects</a></div></footer>
+
+<script>
+"use strict";
+
+/* ---------- seeded random ---------- */
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+const between = (rng, lo, hi) => lo + Math.floor(rng() * (hi - lo + 1));
+function gauss(rng) { return Math.sqrt(-2 * Math.log(1 - rng())) * Math.cos(2 * Math.PI * rng()); }
+function weighted(rng, weights) {
+  let total = 0; for (const w of weights) total += w;
+  let r = rng() * total;
+  for (let i = 0; i < weights.length; i++) { r -= weights[i]; if (r < 0) return i; }
+  return weights.length - 1;
+}
+
+/* ---------- synthetic world ---------- */
+const STORE_NAMES = ["Harbor Street", "Northgate", "Maple Square", "Riverside", "Old Mill",
+  "Cedar Park", "Union Row", "Lakeview", "Foundry Lane", "Elm Crossing"];
+const SKUS = ["Legging, black, S", "Legging, black, M", "Legging, black, L", "Legging, navy, M", "Legging, olive, M",
+  "Tank, white, S", "Tank, white, M", "Tank, black, M", "Tee, grey, M", "Tee, grey, L", "Tee, white, M",
+  "Hoodie, charcoal, M", "Hoodie, charcoal, L", "Hoodie, sand, M", "Jogger, black, M", "Jogger, black, L",
+  "Jogger, grey, M", "Short, navy, M", "Short, black, L", "Sports bra, black, S", "Sports bra, black, M",
+  "Sock, white, 3-pack", "Cap, black, one size", "Yoga mat, charcoal", "Tote bag, natural"];
+const ORDER_COUNT = 400;
+const REQUESTS = { pickup: "Pickup at a store", sameday: "Same-day delivery", standard: "Standard delivery" };
+
+function makeWorld(seed) {
+  const rng = mulberry32(seed);
+  const nodes = [];
+  const wh = { x: between(rng, 84, 94), y: between(rng, 6, 16) };
+  const placed = [wh];
+  for (let i = 0; i < STORE_NAMES.length; i++) {
+    let p, tries = 0;
+    do {
+      p = { x: between(rng, 10, 82), y: between(rng, 14, 90) };
+      tries++;
+    } while (tries < 500 && placed.some(q => Math.hypot(p.x - q.x, p.y - q.y) < 21));
+    placed.push(p);
+    nodes.push({
+      id: i, type: "store", name: STORE_NAMES[i], x: p.x, y: p.y,
+      capacity: between(rng, 20, 40), used: 0, safety: between(rng, 1, 2),
+      onHand: SKUS.map(() => rng() < 0.18 ? 0 : between(rng, 2, 10)),
+      reserved: SKUS.map(() => 0),
+      pull: 0.5 + rng()
+    });
+  }
+  nodes.push({
+    id: nodes.length, type: "wh", name: "Central warehouse", x: wh.x, y: wh.y,
+    capacity: 600, used: 0, safety: 3,
+    onHand: SKUS.map(() => between(rng, 30, 80)),
+    reserved: SKUS.map(() => 0), pull: 0
+  });
+  return nodes;
+}
+
+function makeOrders(seed, nodes) {
+  const rng = mulberry32(seed ^ 0x9E3779B9);
+  const stores = nodes.filter(n => n.type === "store");
+  const pulls = stores.map(s => s.pull);
+  const popularity = SKUS.map(() => 0.4 + 1.2 * rng());
+  const clamp = v => Math.min(98, Math.max(2, v));
+  const orders = [];
+  for (let i = 0; i < ORDER_COUNT; i++) {
+    let x, y;
+    if (rng() < 0.75) {
+      const s = stores[weighted(rng, pulls)];
+      x = clamp(s.x + gauss(rng) * 9); y = clamp(s.y + gauss(rng) * 9);
+    } else { x = 2 + rng() * 96; y = 2 + rng() * 96; }
+    const r = rng();
+    const lineCount = r < 0.45 ? 1 : r < 0.8 ? 2 : 3;
+    const lines = [];
+    while (lines.length < lineCount) {
+      const sku = weighted(rng, popularity);
+      if (!lines.some(l => l.sku === sku)) lines.push({ sku, qty: rng() < 0.8 ? 1 : 2 });
+    }
+    const m = rng();
+    const request = m < 0.35 ? "pickup" : m < 0.6 ? "sameday" : "standard";
+    let pickupStore = null;
+    if (request === "pickup") {
+      const byDistance = stores.slice().sort((a, b) => dist(a, { x, y }) - dist(b, { x, y }));
+      pickupStore = (rng() < 0.8 ? byDistance[0] : byDistance[1]).id;
+    }
+    orders.push({ id: i + 1, x, y, lines, request, pickupStore });
+  }
+  return orders;
+}
+
+/* ---------- routing engine ---------- */
+const SPLIT_PENALTY = 3;     // points per extra parcel
+const MISSED_PROMISE = 4;    // points when pickup today or same day cannot be kept
+const MAX_SHOWN = 5;
+
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+// Available to promise: on hand, minus reserved, minus safety stock.
+const atp = (node, sku) => node.onHand[sku] - node.reserved[sku] - node.safety;
+const destinationOf = (order, nodes) => order.request === "pickup" ? nodes[order.pickupStore] : order;
+
+function methodOf(order, shipments, cfg) {
+  if (!shipments.length) return "backorder";
+  if (shipments.length > 1) return "split";
+  const node = shipments[0].node;
+  if (order.request === "pickup") return node.id === order.pickupStore ? "pickup" : "shipToStore";
+  if (order.request === "sameday" && node.type === "store" && dist(node, order) <= cfg.radius) return "sameday";
+  return node.type === "store" ? "shipFromStore" : "warehouse";
+}
+
+// Every assignment of lines to nodes that passes the hard checks.
+function buildPlans(order, nodes, cfg) {
+  const open = nodes.filter(n => n.used < n.capacity);
+  const options = order.lines.map(l => open.filter(n => atp(n, l.sku) >= l.qty));
+  const fillable = order.lines.filter((l, i) => options[i].length);
+  const fillOptions = options.filter(o => o.length);
+  const backordered = order.lines.filter((l, i) => !options[i].length);
+  const dest = destinationOf(order, nodes);
+  const plans = [];
+  const pick = [];
+  (function assign(k) {
+    if (k === fillable.length) {
+      const shipments = [];
+      pick.forEach((node, i) => {
+        let s = shipments.find(x => x.node === node);
+        if (!s) shipments.push(s = { node, lines: [], km: dist(node, dest) });
+        s.lines.push(fillable[i]);
+      });
+      const plan = { shipments, method: methodOf(order, shipments, cfg) };
+      plan.terms = scorePlan(order, plan, cfg.weights);
+      plans.push(plan);
+      return;
+    }
+    for (const node of fillOptions[k]) { pick.push(node); assign(k + 1); pick.pop(); }
+  })(0);
+  if (!fillable.length) plans.length = 0;
+  return { plans, backordered, open };
+}
+
+function scorePlan(order, plan, weights) {
+  let km = 0, load = 0, drain = 0, lines = 0;
+  for (const s of plan.shipments) {
+    km += s.km;                                    // node to customer, or node to pickup store
+    load += (s.node.used + 1) / s.node.capacity;   // how full the node is after this order
+    for (const l of s.lines) {                     // share of the node's sellable stock used
+      drain += l.qty / atp(s.node, l.sku);
+      lines++;
+    }
+  }
+  const parcels = plan.shipments.length;
+  const kept = order.request === "standard" || plan.method === "pickup" || plan.method === "sameday";
+  const terms = {
+    distance: weights.distance * km / 100,
+    load: weights.load * load / parcels,
+    stock: weights.stock * drain / lines,
+    split: SPLIT_PENALTY * (parcels - 1),
+    promise: kept ? 0 : MISSED_PROMISE
+  };
+  terms.total = terms.distance + terms.load + terms.stock + terms.split + terms.promise;
+  return terms;
+}
+
+function choosePlan(plans) {
+  // Lowest cost wins. Ties go to fewer parcels, then to the plan built first.
+  plans.forEach((p, i) => { p.order = i; });
+  plans.sort((a, b) => a.terms.total - b.terms.total
+    || a.shipments.length - b.shipments.length || a.order - b.order);
+  return plans[0] || null;
+}
+
+function routeOrder(order, nodes, cfg) {
+  const { plans, backordered, open } = buildPlans(order, nodes, cfg);
+  const winner = choosePlan(plans);
+  const ruledOut = nodes.filter(n => !plans.some(p => p.shipments.some(s => s.node === n)))
+    .map(n => ({ name: n.name, why: open.includes(n) ? "not enough sellable stock" : "no picking capacity left" }));
+  const pickupStore = order.request === "pickup" ? nodes[order.pickupStore] : null;
+  const result = {
+    method: winner ? winner.method : "backorder",
+    category: !winner || backordered.length ? "backorder" : winner.method,
+    filled: !!winner && !backordered.length,
+    shipments: winner ? winner.shipments.map(s => ({ node: s.node, km: s.km, lines: s.lines })) : [],
+    km: winner ? winner.shipments.reduce((t, s) => t + s.km, 0) : 0,
+    backordered,
+    planCount: plans.length,
+    singleNodePlans: plans.filter(p => p.shipments.length === 1).length,
+    top: plans.slice(0, MAX_SHOWN).map(p => ({
+      label: p.shipments.map(s => s.node.name).join(" + "), method: p.method,
+      km: p.shipments.reduce((t, s) => t + s.km, 0), terms: p.terms
+    })),
+    ruledOut,
+    pickupShort: pickupStore ? (pickupStore.used >= pickupStore.capacity ? "capacity" :
+      order.lines.some(l => atp(pickupStore, l.sku) < l.qty) ? "stock" : null) : null
+  };
+  if (winner) {
+    for (const s of winner.shipments) {     // reserve before the next order is routed
+      s.node.used++;
+      for (const l of s.lines) s.node.reserved[l.sku] += l.qty;
+    }
+  }
+  return result;
+}
+
+/* ---------- baseline: everything from the warehouse ---------- */
+function routeBaseline(order, nodes) {
+  const wh = nodes[nodes.length - 1];
+  const shipped = order.lines.filter(l => atp(wh, l.sku) >= l.qty);
+  for (const l of shipped) wh.reserved[l.sku] += l.qty;
+  if (shipped.length) wh.used++;
+  return {
+    filled: shipped.length === order.lines.length,
+    shipments: shipped.length ? 1 : 0,
+    km: shipped.length ? dist(wh, destinationOf(order, nodes)) : 0,
+    today: false
+  };
+}
+
+function summarise(rows) {
+  const n = rows.length;
+  const shipped = rows.filter(r => r.shipments > 0);
+  return {
+    orders: n,
+    fillRate: rows.filter(r => r.filled).length / n,
+    todayShare: rows.filter(r => r.today).length / n,
+    avgKm: shipped.length ? shipped.reduce((t, r) => t + r.km, 0) / shipped.length : 0,
+    splitRate: shipped.length ? shipped.filter(r => r.shipments > 1).length / shipped.length : 0,
+    backorders: rows.filter(r => !r.filled).length
+  };
+}
+
+/* ---------- run ---------- */
+const METHODS = {
+  pickup: "Pickup in store today",
+  sameday: "Same-day delivery from a store",
+  shipFromStore: "Ship from store",
+  shipToStore: "Ship to store for pickup",
+  warehouse: "Ship from warehouse",
+  split: "Split across nodes",
+  backorder: "Backordered, in part or in full"
+};
+const $ = id => document.getElementById(id);
+const state = { nodes: [], orders: [], results: [], selected: null, page: 0, filter: "all", tryOrder: null, tryResult: null, cfg: null, seed: 2026 };
+
+function readConfig() {
+  return {
+    weights: { distance: +$("w-dist").value, load: +$("w-load").value, stock: +$("w-stock").value },
+    radius: +$("radius").value
+  };
+}
+function readSeed() {
+  let s = Math.floor(+$("seed").value);
+  if (!Number.isFinite(s) || s < 1) s = 2026;
+  if (s > 999999) s = 999999;
+  $("seed").value = s;
+  return s;
+}
+
+function run() {
+  const cfg = readConfig(), seed = readSeed();
+  const nodes = makeWorld(seed);
+  const orders = makeOrders(seed, nodes);
+  const results = orders.map(o => routeOrder(o, nodes, cfg));
+  const baseNodes = makeWorld(seed);
+  const base = orders.map(o => routeBaseline(o, baseNodes));
+  const engineRows = results.map(r => ({
+    filled: r.filled, shipments: r.shipments.length, km: r.km,
+    today: r.filled && (r.method === "pickup" || r.method === "sameday")
+  }));
+  Object.assign(state, { nodes, orders, results, cfg, seed, engine: summarise(engineRows), baseline: summarise(base), baseRows: base });
+  if (state.selected === null || state.selected >= orders.length) {
+    const i = results.findIndex(r => r.category === "shipToStore");
+    state.selected = i >= 0 ? i : 0;
+  }
+  state.page = Math.floor(visibleOrders().indexOf(state.selected) / PAGE);
+  if (state.page < 0) state.page = 0;
+  renderOutputs();
+  renderMetrics();
+  renderMethodTable();
+  renderNodeTable();
+  renderOrders();
+  runTry();          // also draws the plane
+  renderWhy($("why"), state.orders[state.selected], state.results[state.selected], state.baseRows[state.selected], "Order " + state.orders[state.selected].id);
+  const e = state.engine;
+  $("status").textContent = "Routed " + e.orders + " orders with seed " + seed + ". " + pct(e.fillRate) +
+    " filled in full, " + pct(e.todayShare) + " same day or picked up today, " + e.backorders + " backordered.";
+}
+
+/* ---------- formatting ---------- */
+const pct = v => (v * 100).toFixed(1) + "%";
+const km = v => v.toFixed(1) + " km";
+const pts = v => v.toFixed(2);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+/* ---------- plane ---------- */
+const S = 4;                         // plane units to svg units
+const px = x => x * S, py = y => (100 - y) * S;
+function mark(cat, cx, cy, r) {
+  const c = 'class="m m-' + cat + '"';
+  const f = v => v.toFixed(1);
+  switch (cat) {
+    case "sameday": return '<path ' + c + ' d="M' + f(cx) + ' ' + f(cy - r * 1.2) + 'L' + f(cx + r * 1.15) + ' ' + f(cy + r * .9) + 'L' + f(cx - r * 1.15) + ' ' + f(cy + r * .9) + 'Z"/>';
+    case "shipFromStore":
+    case "split": return '<rect ' + c + ' x="' + f(cx - r * .9) + '" y="' + f(cy - r * .9) + '" width="' + f(r * 1.8) + '" height="' + f(r * 1.8) + '"/>';
+    case "warehouse": return '<path ' + c + ' d="M' + f(cx) + ' ' + f(cy - r * 1.25) + 'L' + f(cx + r * 1.25) + ' ' + f(cy) + 'L' + f(cx) + ' ' + f(cy + r * 1.25) + 'L' + f(cx - r * 1.25) + ' ' + f(cy) + 'Z"/>';
+    case "backorder": return '<path ' + c + ' d="M' + f(cx - r) + ' ' + f(cy - r) + 'L' + f(cx + r) + ' ' + f(cy + r) + 'M' + f(cx + r) + ' ' + f(cy - r) + 'L' + f(cx - r) + ' ' + f(cy + r) + '"/>';
+    default: return '<circle ' + c + ' cx="' + f(cx) + '" cy="' + f(cy) + '" r="' + f(r) + '"/>';
+  }
+}
+function renderLegend() {
+  $("legend").innerHTML = Object.keys(METHODS).map(k =>
+    '<li><svg viewBox="0 0 16 16" aria-hidden="true">' + mark(k, 8, 8, 4.5) + '</svg>' + esc(METHODS[k]) + '</li>').join("") +
+    '<li><svg viewBox="0 0 16 16" aria-hidden="true"><circle class="node" cx="8" cy="8" r="5.5"/></svg>Store</li>' +
+    '<li><svg viewBox="0 0 16 16" aria-hidden="true"><rect class="node node-wh" x="3" y="3" width="10" height="10"/></svg>Warehouse</li>';
+}
+function renderPlane() {
+  const { nodes, orders, results, cfg } = state;
+  let h = '<g class="dots">';
+  orders.forEach((o, i) => { h += mark(results[i].category, px(o.x), py(o.y), 3); });
+  h += "</g>";
+  // selected order
+  const o = orders[state.selected], r = results[state.selected];
+  if (o) {
+    const dest = destinationOf(o, nodes);
+    if (o.request === "sameday") h += '<circle class="sel-radius" cx="' + px(o.x) + '" cy="' + py(o.y) + '" r="' + cfg.radius * S + '"/>';
+    if (o.request === "pickup") h += '<path class="sel-dash" d="M' + px(o.x) + ' ' + py(o.y) + 'L' + px(dest.x) + ' ' + py(dest.y) + '"/>';
+    for (const s of r.shipments) h += '<path class="sel-line" d="M' + px(s.node.x) + ' ' + py(s.node.y) + 'L' + px(dest.x) + ' ' + py(dest.y) + '"/>';
+    h += '<circle class="sel-ring" cx="' + px(o.x) + '" cy="' + py(o.y) + '" r="8"/>';
+  }
+  // test order
+  const t = state.tryOrder;
+  if (t) {
+    const dest = destinationOf(t, state.tryNodes);
+    for (const s of state.tryResult.shipments) h += '<path class="sel-dash" d="M' + px(s.node.x) + ' ' + py(s.node.y) + 'L' + px(dest.x) + ' ' + py(dest.y) + '"/>';
+    h += '<circle class="try-mark" cx="' + px(t.x) + '" cy="' + py(t.y) + '" r="7"/><circle class="try-mark" cx="' + px(t.x) + '" cy="' + py(t.y) + '" r="1.5"/>';
+  }
+  // nodes on top
+  for (const n of nodes) {
+    const left = n.capacity - n.used;
+    const title = "<title>" + esc(n.name) + ": " + left + " of " + n.capacity + " picks left</title>";
+    const lx = Math.min(350, Math.max(50, px(n.x)));
+    if (n.type === "wh") {
+      h += '<rect class="node node-wh" x="' + (px(n.x) - 9) + '" y="' + (py(n.y) - 9) + '" width="18" height="18">' + title + '</rect>';
+      h += '<text style="text-anchor:end" x="' + Math.min(394, px(n.x) + 40) + '" y="' + (py(n.y) + 24) + '">' + esc(n.name) + '</text>';
+    } else {
+      const rad = 4.5 + 9 * left / 40;
+      h += '<circle class="node" cx="' + px(n.x) + '" cy="' + py(n.y) + '" r="' + rad.toFixed(1) + '">' + title + '</circle>';
+      h += '<text x="' + lx + '" y="' + (py(n.y) + rad + 13).toFixed(1) + '">' + esc(n.name) + '</text>';
+    }
+  }
+  $("plane").innerHTML = h;
+}
+$("plane").addEventListener("click", ev => {
+  const box = $("plane").getBoundingClientRect();
+  const x = (ev.clientX - box.left) / box.width * 100, y = 100 - (ev.clientY - box.top) / box.height * 100;
+  let best = -1, bestD = 4.5;
+  state.orders.forEach((o, i) => { const d = Math.hypot(o.x - x, o.y - y); if (d < bestD) { bestD = d; best = i; } });
+  if (best >= 0) select(best, true);
+});
+
+/* ---------- why this route ---------- */
+function reasonFor(order, r, cfg, nodes) {
+  const out = [];
+  if (order.request === "pickup" && r.method !== "pickup" && r.shipments.length) {
+    const store = nodes[order.pickupStore].name;
+    out.push(r.pickupShort === "capacity"
+      ? store + " had no picking capacity left, so the order ships to that store from another node and is collected later."
+      : store + " did not have every line above its safety stock, so stock ships to that store from another node and is collected later.");
+  }
+  if (order.request === "sameday" && r.method !== "sameday" && r.shipments.length) {
+    out.push("No single store within " + cfg.radius + " km could supply every line at a lower total cost, so this goes out as a standard delivery.");
+  }
+  if (r.shipments.length > 1 && r.singleNodePlans === 0) {
+    out.push("No single node could supply every line, so the order is split across " + r.shipments.length + " nodes.");
+  }
+  if (r.backordered.length) {
+    out.push("No node with capacity had enough sellable stock for " + r.backordered.map(l => SKUS[l.sku]).join("; ") +
+      (r.shipments.length ? ". That part is backordered." : ". The order is backordered."));
+  }
+  if (r.top.length === 1) {
+    out.push("It was the only plan that passed the stock and capacity checks.");
+  } else if (r.top.length > 1) {
+    const a = r.top[0].terms, b = r.top[1].terms;
+    const names = { distance: "distance", load: "store load", stock: "stock protection", split: "the split penalty", promise: "the missed promise penalty" };
+    let key = null, gap = 0;
+    for (const k of Object.keys(names)) if (b[k] - a[k] > gap) { gap = b[k] - a[k]; key = k; }
+    out.push("It scored " + pts(a.total) + " against " + pts(b.total) + " for the next best plan, " + r.top[1].label + "." +
+      (key ? " The biggest gap was " + names[key] + ": " + pts(a[key]) + " against " + pts(b[key]) + "." : " The two plans tied, and the tie went to the one built first."));
+  }
+  return out;
+}
+function decisionText(order, r, nodes) {
+  if (!r.shipments.length) return "Backordered. Nothing could be shipped.";
+  const from = r.shipments.map(s => s.node.name).join(" and ");
+  const to = order.request === "pickup" ? " to " + nodes[order.pickupStore].name : "";
+  const part = r.backordered.length ? " Part of the order is backordered." : "";
+  switch (r.method) {
+    case "pickup": return "Pickup today at " + from + ", from that store's own stock." + part;
+    case "sameday": return "Same-day delivery from " + from + ", " + km(r.km) + " away." + part;
+    case "shipFromStore": return "Shipped from the " + from + " store, " + km(r.km) + " away." + part;
+    case "shipToStore": return "Shipped" + to + " from " + from + ", " + km(r.km) + "." + part;
+    case "warehouse": return "Shipped from the " + from + ", " + km(r.km) + " away." + part;
+    default: return "Split: parcels from " + from + (to || " to the customer") + ", " + km(r.km) + " in total." + part;
+  }
+}
+function renderWhy(el, order, r, base, title) {
+  const nodes = el.id === "try-why" ? state.tryNodes : state.nodes;
+  let h = "<h3>Why this route: " + esc(title) + "</h3>";
+  h += '<p class="small" style="margin-top:0">Asked for ' + REQUESTS[order.request].toLowerCase() +
+    (order.request === "pickup" ? " at " + esc(nodes[order.pickupStore].name) : "") + ".</p>";
+  h += "<ul>" + order.lines.map(l => "<li>" + l.qty + " × " + esc(SKUS[l.sku]) + "</li>").join("") + "</ul>";
+  h += '<p class="decision mt">' + esc(decisionText(order, r, nodes)) + "</p>";
+  for (const line of reasonFor(order, r, state.cfg, nodes)) h += "<p>" + esc(line) + "</p>";
+  if (r.top.length) {
+    h += '<p class="small">Plans considered, lowest cost first. Columns after km are cost points.</p><div class="scroll"><table>' +
+      '<thead><tr><th>Plan</th><th class="num">km</th><th class="num">Distance</th><th class="num">Load</th><th class="num">Stock</th><th class="num">Penalties</th><th class="num">Total</th></tr></thead><tbody>';
+    r.top.forEach((p, i) => {
+      h += "<tr" + (i === 0 ? ' class="win"' : "") + "><td>" + esc(p.label) + (i === 0 ? ' <span class="tag">chosen</span>' : "") +
+        '<br><span class="small">' + esc(METHODS[p.method]) + '</span></td><td class="num">' + p.km.toFixed(1) + '</td><td class="num">' + pts(p.terms.distance) +
+        '</td><td class="num">' + pts(p.terms.load) + '</td><td class="num">' + pts(p.terms.stock) + '</td><td class="num">' + pts(p.terms.split + p.terms.promise) +
+        '</td><td class="num">' + pts(p.terms.total) + "</td></tr>";
+    });
+    h += "</tbody></table></div>";
+  }
+  const more = r.planCount - r.top.length;
+  let foot = more > 0 ? more + " more " + (more === 1 ? "plan" : "plans") + " scored worse. " : "";
+  if (r.ruledOut.length) foot += "Ruled out by the hard checks: " + r.ruledOut.map(x => x.name + " (" + x.why + ")").join(", ") + ". ";
+  if (base) foot += "Baseline: " + (base.shipments ? "ships from the warehouse, " + km(base.km) + (base.filled ? "." : ", with part backordered.") : "backordered, the warehouse has none of it.");
+  if (foot) h += '<p class="small">' + esc(foot) + "</p>";
+  el.innerHTML = h;
+}
+
+/* ---------- orders table ---------- */
+const PAGE = 8;
+function visibleOrders() {
+  const all = state.results.map((r, i) => i);
+  return state.filter === "all" ? all : all.filter(i => state.results[i].category === state.filter);
+}
+function renderOrders() {
+  const list = visibleOrders();
+  const pages = Math.max(1, Math.ceil(list.length / PAGE));
+  state.page = Math.min(Math.max(0, state.page), pages - 1);
+  const slice = list.slice(state.page * PAGE, state.page * PAGE + PAGE);
+  $("orders-body").innerHTML = slice.map(i => {
+    const o = state.orders[i], r = state.results[i];
+    return "<tr" + (i === state.selected ? ' class="sel"' : "") + '><td><button type="button" class="rowbtn" data-i="' + i + '" aria-pressed="' + (i === state.selected) +
+      '" aria-label="Order ' + o.id + ', show why this route">Order ' + o.id + "</button></td><td>" + REQUESTS[o.request] + '</td><td class="num">' + o.lines.length +
+      "</td><td>" + METHODS[r.category] + "</td><td>" + (r.shipments.length ? esc(r.shipments.map(s => s.node.name).join(" + ")) : "None") +
+      '</td><td class="num">' + (r.shipments.length ? km(r.km) : "0.0 km") + "</td></tr>";
+  }).join("") || '<tr><td colspan="6">No orders were routed this way in this run.</td></tr>';
+  $("page-info").textContent = list.length ? "Page " + (state.page + 1) + " of " + pages + ", " + list.length + " orders" : "0 orders";
+  $("prev").disabled = state.page === 0;
+  $("next").disabled = state.page >= pages - 1;
+}
+function select(i, jump) {
+  state.selected = i;
+  if (jump) {
+    if (state.filter !== "all" && state.results[i].category !== state.filter) { state.filter = "all"; $("filter").value = "all"; }
+    state.page = Math.floor(visibleOrders().indexOf(i) / PAGE);
+  }
+  renderOrders();
+  renderPlane();
+  renderWhy($("why"), state.orders[i], state.results[i], state.baseRows[i], "Order " + state.orders[i].id);
+}
+$("orders-body").addEventListener("click", ev => {
+  const b = ev.target.closest("button[data-i]");
+  if (!b) return;
+  const i = +b.dataset.i;
+  select(i, false);
+  const again = $("orders-body").querySelector('button[data-i="' + i + '"]');
+  if (again) again.focus();
+});
+$("prev").addEventListener("click", () => { state.page--; renderOrders(); });
+$("next").addEventListener("click", () => { state.page++; renderOrders(); });
+$("filter").addEventListener("change", ev => { state.filter = ev.target.value; state.page = 0; renderOrders(); });
+
+/* ---------- metrics and tables ---------- */
+function renderMetrics() {
+  const e = state.engine, b = state.baseline;
+  const cut = b.avgKm > 0 ? (b.avgKm - e.avgKm) / b.avgKm : 0;
+  const tiles = [
+    [pct(e.fillRate), "Fill rate: orders filled in full. <b>Baseline " + pct(b.fillRate) + "</b>"],
+    [pct(e.todayShare), "Orders delivered same day or picked up today. <b>Baseline " + pct(b.todayShare) + "</b>"],
+    [e.avgKm.toFixed(1) + " <small>km</small>", "Average distance goods travel per shipped order. <b>Baseline " + km(b.avgKm) + ", so " +
+      (cut >= 0 ? pct(cut) + " shorter" : pct(-cut) + " longer") + "</b>"],
+    [pct(e.splitRate), "Shipped orders split into more than one parcel. <b>Baseline " + pct(b.splitRate) + "</b>"],
+    [String(e.backorders), "Orders with a backordered line. <b>Baseline " + b.backorders + "</b>"]
+  ];
+  $("metrics").innerHTML = tiles.map(t => '<div class="metric"><div class="v">' + t[0] + '</div><div class="l">' + t[1] + "</div></div>").join("");
+}
+function renderMethodTable() {
+  const n = state.results.length;
+  $("method-body").innerHTML = Object.keys(METHODS).map(k => {
+    const c = state.results.filter(r => r.category === k).length;
+    return "<tr><td>" + METHODS[k] + '</td><td class="num">' + c + '</td><td class="num">' + pct(c / n) +
+      '</td><td><div class="bar" aria-hidden="true"><i style="width:' + (c / n * 100).toFixed(1) + '%"></i></div></td></tr>';
+  }).join("");
+}
+function renderNodeTable() {
+  $("node-body").innerHTML = state.nodes.map(n => {
+    const left = SKUS.reduce((t, s, i) => t + Math.max(0, atp(n, i)), 0);
+    return "<tr><td>" + esc(n.name) + '</td><td class="num">' + n.used + '</td><td class="num">' + n.capacity + '</td><td class="num">' + left + "</td></tr>";
+  }).join("");
+}
+function renderOutputs() {
+  $("o-wd").textContent = $("w-dist").value;
+  $("o-wl").textContent = $("w-load").value;
+  $("o-ws").textContent = $("w-stock").value;
+  $("o-r").textContent = $("radius").value + " km";
+  $("o-tx").textContent = $("t-x").value;
+  $("o-ty").textContent = $("t-y").value;
+}
+
+/* ---------- try one order ---------- */
+function runTry() {
+  const nodes = makeWorld(state.seed);            // start-of-day stock, nothing reserved
+  const request = $("t-method").value;
+  $("t-store").disabled = request !== "pickup";
+  const order = {
+    id: 0, x: +$("t-x").value, y: +$("t-y").value, request,
+    lines: [{ sku: +$("t-sku").value, qty: +$("t-qty").value }],
+    pickupStore: request === "pickup" ? +$("t-store").value : null
+  };
+  const cfg = readConfig();
+  state.cfg = cfg;
+  state.tryNodes = nodes;
+  state.tryOrder = order;
+  state.tryResult = routeOrder(order, nodes, cfg);
+  const baseNodes = makeWorld(state.seed);
+  renderOutputs();
+  renderWhy($("try-why"), order, state.tryResult, routeBaseline(order, baseNodes), "your test order");
+  renderPlane();
+}
+function fillSelects() {
+  $("t-sku").innerHTML = SKUS.map((s, i) => '<option value="' + i + '">' + esc(s) + "</option>").join("");
+  $("t-store").innerHTML = STORE_NAMES.map((s, i) => '<option value="' + i + '">' + esc(s) + "</option>").join("");
+  $("filter").innerHTML = '<option value="all">All orders</option>' + Object.keys(METHODS).map(k => '<option value="' + k + '">' + METHODS[k] + "</option>").join("");
+}
+
+/* ---------- wire up ---------- */
+for (const id of ["w-dist", "w-load", "w-stock", "radius"]) $(id).addEventListener("input", run);
+$("seed").addEventListener("change", () => { state.selected = null; run(); });
+$("run").addEventListener("click", () => { if (readSeed() !== state.seed) state.selected = null; run(); });
+for (const id of ["t-sku", "t-qty", "t-method", "t-store", "t-x", "t-y"]) $(id).addEventListener("input", runTry);
+
+$("n-stores").textContent = String(STORE_NAMES.length);
+$("n-orders").textContent = String(ORDER_COUNT);
+$("n-skus").textContent = String(SKUS.length);
+$("c-split").textContent = String(SPLIT_PENALTY);
+$("c-promise").textContent = String(MISSED_PROMISE);
+$("excerpt").textContent = scorePlan.toString() + "\n\n" + choosePlan.toString();
+fillSelects();
+renderLegend();
+run();
+</script>
+</body>
+</html>

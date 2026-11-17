@@ -296,15 +296,37 @@
   <section id="projects" class="wrap" aria-labelledby="proj-h">
     <h2 id="proj-h">Projects</h2>
     <p class="lede">Live demos you can run, plus research and analytics work.</p>
-    <div class="cards" style="margin-bottom:20px">
-      <article class="card" style="grid-column:1/-1">
+    <div class="cards demo" style="margin-bottom:20px;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr))">
+      <article class="card">
         <div class="result">13.8×</div>
         <h3>Concurrent price upload</h3>
         <div class="meta">Retail engineering, live demo</div>
-        <p>Price batches for 12 markets, uploaded one at a time and then through a worker pool limited by a semaphore. On the default run the concurrent upload finishes in 28.5 s against 394.3 s, in simulated time on generated sample data.</p>
+        <p>Price batches for 12 markets, uploaded one at a time and then through a worker pool limited by a semaphore: 28.5 s against 394.3 s in simulated time.</p>
         <a class="more" href="projects/price-upload/">Open the live demo</a>
       </article>
+      <article class="card">
+        <div class="result">100%</div>
+        <h3>Omnichannel order routing</h3>
+        <div class="meta">Retail engineering, live demo</div>
+        <p>An engine that picks pickup, same-day, ship from store, ship to store or warehouse for each order. It fills 100% of sample orders against 86% for warehouse-only, with goods travelling 50.1% less far.</p>
+        <a class="more" href="projects/order-routing/">Open the live demo</a>
+      </article>
+      <article class="card">
+        <div class="result">+13.8%</div>
+        <h3>Store performance analytics</h3>
+        <div class="meta">Retail analytics, live demo</div>
+        <p>A dashboard over 3,120 rows of store data that measures a promotion's lift with difference-in-differences: +13.8% estimated (95% interval 7.4% to 18.9%) against a true +18% built into the data.</p>
+        <a class="more" href="projects/store-analytics/">Open the live demo</a>
+      </article>
+      <article class="card">
+        <div class="result">18.6%</div>
+        <h3>Demand forecasting and replenishment</h3>
+        <div class="meta">Data, live demo</div>
+        <p>A cleaning pipeline and a Holt-Winters forecast built from scratch. Forecast error on held-out weeks is 18.6% against 24.3% for the baseline, and it wins on 33 of 40 SKUs.</p>
+        <a class="more" href="projects/demand-forecast/">Open the live demo</a>
+      </article>
     </div>
+    <p class="lede" style="font-size:15px;max-width:none;margin:-4px 0 28px">The demos run on generated sample data in your browser, not Alo Yoga's code or data. Every figure is computed by the demo on its default run.</p>
     <div class="cards">
       <article class="card">
         <div class="result">23%</div>

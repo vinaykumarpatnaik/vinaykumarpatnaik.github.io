@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demand forecasting and replenishment — Vinay Kumar Patnaik</title>
+<meta name="description" content="A live demo that cleans raw weekly sales data, forecasts demand per SKU with Holt-Winters written from scratch, scores it on a holdout against a seasonal-naive baseline, and turns the forecast into a reorder point.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="../shared.css">
+<style>
+  /* Chart series colours. Blue and orange were checked for colour-blind separation
+     and 3:1 contrast on both the light and the dark panel surface. */
+  .viz{--s-model:#2a78d6;--s-base:#eb6834;--s-actual:var(--ink);--s-history:var(--muted);--grid:var(--hair)}
+  @media (prefers-color-scheme:dark){.viz{--s-model:#3987e5;--s-base:#d95926}}
+
+  .stack{display:grid;gap:18px}
+  .panel h3{margin-bottom:12px}
+  .panel h3 + p{margin-top:-6px;margin-bottom:14px;font-size:15px;color:var(--muted)}
+  .runrow{display:flex;flex-wrap:wrap;gap:14px 18px;align-items:end}
+  .runrow input[type=number]{width:130px}
+  .status{font-size:14px;color:var(--muted);margin-top:12px;min-height:21px}
+  .bar{margin-top:14px}
+
+  .steps{list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;counter-reset:step}
+  .steps li{counter-increment:step;background:var(--field);border-radius:14px;padding:14px 16px;font-size:14px;color:var(--body)}
+  .steps li b{display:block;font-size:24px;font-weight:800;letter-spacing:-0.03em;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1.15}
+  .steps li .t{display:block;font-weight:600;color:var(--ink)}
+  .steps li .t::before{content:counter(step) ". ";color:var(--muted)}
+  .steps li .d{display:block;font-size:13px;color:var(--muted);margin-top:2px}
+  .fine{font-size:13px;color:var(--muted);margin-top:12px;max-width:none}
+
+  .picks{display:grid;gap:10px;margin-top:16px}
+  .pickrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .pickrow .lab{font-size:14px;font-weight:600;color:var(--muted);width:100%}
+  .chip{font:inherit;font-size:14px;font-weight:600;min-height:44px;padding:0 14px;border-radius:980px;border:1px solid var(--hair);background:var(--field);color:var(--ink);cursor:pointer;font-variant-numeric:tabular-nums}
+  .chip:hover{border-color:var(--link)}
+  .chip[aria-pressed=true]{border-color:var(--link);box-shadow:inset 0 0 0 1px var(--link);color:var(--link)}
+
+  .skuline{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;margin:20px 0 6px}
+  .skuline h3{margin:0}
+  .skuline span{font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--body);margin:8px 0 4px;list-style:none}
+  .legend li{display:inline-flex;align-items:center;gap:8px}
+  .legend svg{flex:none}
+  .chartbox{position:relative}
+  .chartbox svg.chart{display:block;width:100%;height:auto;border-radius:10px;touch-action:pan-y}
+  .chart text{font-family:var(--font);font-size:12px;fill:var(--muted)}
+  .chart .gridline{stroke:var(--grid);stroke-width:1}
+  .chart .axis{stroke:var(--grid);stroke-width:1}
+  .chart .hold{fill:var(--field)}
+  .chart .split{stroke:var(--muted);stroke-width:1;stroke-dasharray:2 4}
+  .chart .l-history{fill:none;stroke:var(--s-history);stroke-width:1.5;stroke-linejoin:round}
+  .chart .l-actual{fill:none;stroke:var(--s-actual);stroke-width:2;stroke-linejoin:round}
+  .chart .l-model{fill:none;stroke:var(--s-model);stroke-width:2.25;stroke-linejoin:round}
+  .chart .l-base{fill:none;stroke:var(--s-base);stroke-width:2;stroke-dasharray:6 4;stroke-linejoin:round}
+  .chart .cross{stroke:var(--muted);stroke-width:1}
+  .chart .dot{stroke:var(--surface);stroke-width:2}
+  .tip{position:absolute;top:0;left:0;pointer-events:none;background:var(--surface);border:1px solid var(--hair);border-radius:12px;padding:10px 12px;font-size:13px;color:var(--body);box-shadow:0 6px 24px rgba(0,0,0,.14);min-width:170px;z-index:2}
+  .tip[hidden]{display:none}
+  .tip .w{font-weight:600;color:var(--muted);margin-bottom:4px}
+  .tip .r{display:flex;align-items:center;gap:8px;justify-content:space-between}
+  .tip .r span{display:inline-flex;align-items:center;gap:6px}
+  .tip .r b{color:var(--ink);font-variant-numeric:tabular-nums}
+  details{margin-top:12px}
+  summary{cursor:pointer;font-size:14px;font-weight:600;color:var(--link);min-height:44px;display:inline-flex;align-items:center}
+  details .scroll{max-height:320px;overflow-y:auto}
+
+  .replen{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:18px}
+  .replen div{background:var(--field);border-radius:14px;padding:14px 16px}
+  .replen b{display:block;font-size:26px;font-weight:800;letter-spacing:-0.03em;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1.15}
+  .replen span{display:block;font-size:13px;line-height:1.35;color:var(--muted);margin-top:4px}
+  .controls input[type=number]{width:120px}
+  .advice{margin-top:14px;font-size:15px}
+
+  .tablebox{max-height:520px;overflow:auto}
+  .tablebox thead th{position:sticky;top:0;background:var(--surface);z-index:1;padding:0}
+  .sortbtn{font:inherit;font-size:13px;font-weight:600;color:var(--muted);background:none;border:0;cursor:pointer;min-height:44px;padding:4px 8px;width:100%;text-align:left;vertical-align:bottom;white-space:normal;line-height:1.25}
+  th.num .sortbtn{text-align:right}
+  .sortbtn:hover{color:var(--ink)}
+  th[aria-sort=ascending] .sortbtn::after{content:" \25B2";font-size:9px}
+  th[aria-sort=descending] .sortbtn::after{content:" \25BC";font-size:9px}
+  th[aria-sort] .sortbtn{color:var(--ink)}
+  .rowbtn{font:inherit;font-size:inherit;font-weight:600;color:var(--link);background:none;border:0;cursor:pointer;min-height:44px;padding:0;text-align:left;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .rowbtn:hover{text-decoration:underline}
+  tbody td{padding-block:0}
+  tbody tr.sel td{background:var(--tag)}
+  td.name{min-width:150px}
+  #results td{padding-inline:8px}
+  .win{font-size:13px;font-weight:600;white-space:nowrap}
+  .win.base{color:var(--warn)}
+  .win.model{color:var(--body)}
+  #metrics{margin-top:18px}
+  #metrics .v{font-size:clamp(28px,3.3vw,36px)}
+  @media (max-width:560px){.chip{font-size:13px;padding:0 11px}.pickrow{gap:6px}}
+  #howcode{max-height:none}
+</style>
+</head>
+<body>
+<nav><div class="wrap"><a class="me" href="/">Vinay Kumar Patnaik</a><a class="back" href="/#projects">All projects</a></div></nav>
+
+<header class="head wrap">
+  <p class="kind">Data</p>
+  <h1>Demand forecasting and replenishment</h1>
+  <p class="sub">I clean three years of messy weekly sales, forecast each SKU with Holt-Winters written from scratch, score it on weeks the model never saw, and turn the forecast into a reorder point.</p>
+  <p class="note">This is a personal demo project. It runs in your browser on sample data generated from a seeded random number generator. It is not Alo Yoga's code or data.</p>
+</header>
+
+<main class="wrap">
+  <section aria-labelledby="demo-h" style="padding-top:0">
+    <h2 id="demo-h">Live demo</h2>
+    <div class="stack">
+
+      <div class="panel">
+        <div class="runrow">
+          <label for="seed">Seed
+            <input type="number" id="seed" value="20260" min="1" max="999999999" step="1" inputmode="numeric">
+          </label>
+          <button class="btn btn-primary" id="run" type="button">Run again</button>
+          <button class="btn btn-ghost" id="reseed" type="button">New random seed</button>
+        </div>
+        <div class="bar" aria-hidden="true"><i id="prog"></i></div>
+        <p class="status" id="status" role="status" aria-live="polite">Starting…</p>
+      </div>
+
+      <div class="panel">
+        <h3>1. Data-quality pipeline</h3>
+        <p>The generator plants problems in the raw rows. The pipeline has to find them without being told where they are.</p>
+        <ol class="steps" id="steps"></ol>
+        <p class="fine" id="injected"></p>
+      </div>
+
+      <div class="panel viz">
+        <h3>2. Forecast on the holdout</h3>
+        <p>Trained on weeks 1 to 130. The last 26 weeks are held out and only used for scoring.</p>
+        <div class="controls">
+          <label for="sku">SKU
+            <select id="sku"></select>
+          </label>
+          <label for="view">Chart range
+            <select id="view">
+              <option value="78" selected>Last 78 weeks</option>
+              <option value="156">All 156 weeks</option>
+            </select>
+          </label>
+        </div>
+        <div class="picks">
+          <div class="pickrow"><span class="lab" id="worst-l">Worst 5 by Holt-Winters WAPE</span><span id="worst" role="group" aria-labelledby="worst-l" class="pickrow"></span></div>
+          <div class="pickrow"><span class="lab" id="best-l">Best 5 by Holt-Winters WAPE</span><span id="best" role="group" aria-labelledby="best-l" class="pickrow"></span></div>
+        </div>
+
+        <div class="skuline" aria-live="polite">
+          <h3 id="skuname">&nbsp;</h3>
+          <span id="skustats"></span>
+        </div>
+        <ul class="legend" aria-label="Chart legend">
+          <li><svg width="28" height="10" aria-hidden="true"><line x1="0" y1="5" x2="28" y2="5" style="stroke:var(--s-history);stroke-width:1.5"/></svg>Cleaned history (thin grey)</li>
+          <li><svg width="28" height="10" aria-hidden="true"><line x1="0" y1="5" x2="28" y2="5" style="stroke:var(--s-actual);stroke-width:2"/></svg>Holdout actuals (bold solid)</li>
+          <li><svg width="28" height="10" aria-hidden="true"><line x1="0" y1="5" x2="28" y2="5" style="stroke:var(--s-model);stroke-width:2.25"/></svg>Holt-Winters (solid blue)</li>
+          <li><svg width="28" height="10" aria-hidden="true"><line x1="0" y1="5" x2="28" y2="5" style="stroke:var(--s-base);stroke-width:2;stroke-dasharray:6 4"/></svg>Seasonal naive (dashed orange)</li>
+        </ul>
+        <div class="chartbox" id="chartbox">
+          <svg class="chart" id="chart" role="img" tabindex="0" aria-label="Weekly units chart"></svg>
+          <div class="tip" id="tip" hidden></div>
+        </div>
+        <p class="fine">Hover, touch or focus the chart and use the arrow keys to read values week by week.</p>
+        <details>
+          <summary>Holdout weeks as a table</summary>
+          <div class="scroll"><table id="weeks"><thead><tr><th>Week</th><th class="num">Actual</th><th class="num">Holt-Winters</th><th class="num">Seasonal naive</th><th>Note</th></tr></thead><tbody></tbody></table></div>
+        </details>
+      </div>
+
+      <div class="panel">
+        <h3>3. Replenishment for the selected SKU</h3>
+        <p>The model is refitted on all 156 weeks to forecast the weeks ahead. Forecast error on the holdout sets the safety stock.</p>
+        <div class="controls">
+          <label for="lead">Lead time (weeks)
+            <input type="number" id="lead" value="2" min="1" max="8" step="1" inputmode="numeric">
+          </label>
+          <label for="svc">Service level
+            <select id="svc">
+              <option value="90">90%</option>
+              <option value="95" selected>95%</option>
+              <option value="98">98%</option>
+              <option value="99">99%</option>
+            </select>
+          </label>
+          <label for="cycle">Order cycle (weeks)
+            <input type="number" id="cycle" value="4" min="1" max="12" step="1" inputmode="numeric">
+          </label>
+          <label for="onhand">Units on hand
+            <input type="number" id="onhand" value="0" min="0" step="1" inputmode="numeric">
+          </label>
+        </div>
+        <div aria-live="polite">
+          <div class="replen" id="replen"></div>
+          <p class="advice" id="advice"></p>
+        </div>
+        <p class="fine" id="replen-note"></p>
+      </div>
+
+      <div class="panel">
+        <h3>Results for every SKU</h3>
+        <p id="tablesum" aria-live="polite">&nbsp;</p>
+        <div class="scroll tablebox">
+          <table id="results">
+            <thead><tr>
+              <th data-k="id"><button class="sortbtn" type="button">SKU</button></th>
+              <th data-k="name"><button class="sortbtn" type="button">Product</button></th>
+              <th class="num" data-k="units"><button class="sortbtn" type="button">Holdout units</button></th>
+              <th class="num" data-k="wapeM"><button class="sortbtn" type="button">WAPE Holt-Winters</button></th>
+              <th class="num" data-k="wapeB"><button class="sortbtn" type="button">WAPE seasonal naive</button></th>
+              <th class="num" data-k="impr"><button class="sortbtn" type="button">Improvement</button></th>
+              <th class="num" data-k="biasM"><button class="sortbtn" type="button">Bias</button></th>
+              <th data-k="winner"><button class="sortbtn" type="button">Better on holdout</button></th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="fine">Improvement is the relative drop in WAPE against the baseline. Negative means the baseline was better. Bias is total forecast minus total actual, as a share of actual. Select a SKU to chart it.</p>
+      </div>
+    </div>
+
+    <div class="metrics" id="metrics">
+      <div class="metric"><div class="v" id="m-wm">…</div><div class="l">WAPE, Holt-Winters, all SKUs on the holdout</div></div>
+      <div class="metric"><div class="v" id="m-wb">…</div><div class="l">WAPE, seasonal naive baseline</div></div>
+      <div class="metric"><div class="v" id="m-imp">…</div><div class="l">Relative improvement over the baseline</div></div>
+      <div class="metric"><div class="v" id="m-share">…</div><div class="l" id="m-share-l">Share of SKUs where Holt-Winters wins</div></div>
+      <div class="metric"><div class="v" id="m-rows">…</div><div class="l">Rows removed or corrected by the pipeline</div></div>
+    </div>
+    <p class="fine" id="overall-extra"></p>
+  </section>
+
+  <section aria-labelledby="how-h">
+    <h2 id="how-h">How it works</h2>
+    <p>The page generates 40 SKUs with 156 weeks of unit sales each. Every SKU has its own level, trend, yearly season, promo spikes and noise, and a few are slow sellers with many zero weeks. Then it damages the data on purpose: duplicated rows, missing weeks, negative quantities and a few extreme values. The pipeline removes duplicates, fills gaps, flips sign errors and caps outliers. Every cleaning rule only looks backwards in time or stays inside its own side of the train and holdout split, so nothing from the holdout leaks into training.</p>
+    <p>The forecast is additive Holt-Winters with a 52-week season. It keeps three numbers up to date each week: the level, the trend, and a seasonal offset for that week of the year. Three weights control how fast each one reacts. I pick the weights per SKU with a small grid search: fit on weeks 1 to 104, forecast weeks 105 to 130, keep the weights with the lowest error. The last 26 weeks play no part in that choice. The grid is kept small and slow-moving on purpose, because one validation slice is easy to overfit.</p>
+    <p>Scoring on a holdout matters because a model always looks good on the data it was fitted to. The baseline is seasonal naive, which repeats the same week from last year. It is hard to beat on seasonal retail data, so it is the right thing to compare against. I use WAPE, total absolute error divided by total units, instead of MAPE. MAPE divides by each week's actual, so it breaks on zero weeks and lets slow sellers with tiny volumes dominate the average. WAPE stays defined and weights errors by the units that matter. Holdout weeks that had to be imputed are left out of the score.</p>
+    <p>For replenishment, safety stock is z × σ × √lead time, where σ is the standard deviation of the holdout forecast errors and z comes from the service level. The reorder point is forecast demand over the lead time plus safety stock. The suggested order tops stock up to cover lead time plus one order cycle.</p>
+    <pre id="howcode" aria-label="The Holt-Winters function this page runs"><code id="code"></code></pre>
+    <p class="fine">This is the function the page is running, printed from the live code.</p>
+  </section>
+
+  <section aria-labelledby="what-h">
+    <h2 id="what-h">What this shows</h2>
+    <p>I can take raw sales data from messy rows to a stocking decision: clean it with stated rules, forecast it with a method I understand well enough to write myself, and judge it against a simple baseline on data the model has not seen. Where the baseline wins on a SKU, the table says so. The data is generated, so the numbers show the method working, not a result from any real business.</p>
+  </section>
+</main>
+
+<footer><div class="wrap"><span>© 2026 Vinay Kumar Patnaik</span><a href="/#projects">All projects</a></div></footer>
+
+<script>
+"use strict";
+/*CORE-START*/
+const WEEKS = 156, TRAIN = 130, TEST = 26, VAL = 26, PERIOD = 52, N_SKU = 40, FUTURE = 26;
+const GRID = { alpha: [0.05, 0.1, 0.2, 0.3], beta: [0.005, 0.02, 0.05], gamma: [0.05, 0.1, 0.2, 0.35, 0.5] };
+
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function makeRng(seed) {
+  const u = mulberry32(seed);
+  const r = {
+    u,
+    range: (lo, hi) => lo + (hi - lo) * u(),
+    int: (lo, hi) => lo + Math.floor(u() * (hi - lo + 1)),
+    normal: () => { let a = 0; while (a === 0) a = u(); return Math.sqrt(-2 * Math.log(a)) * Math.cos(2 * Math.PI * u()); },
+    poisson: (lam) => { const L = Math.exp(-lam); let k = 0, p = 1; do { k++; p *= u(); } while (p > L); return k - 1; }
+  };
+  return r;
+}
+
+const TYPES = ["High-rise legging", "Ribbed tank", "Zip hoodie", "Jogger", "Sports bra", "Crew sock 3-pack", "Bike short", "Long-sleeve tee"];
+const COLOURS = ["black", "ivory", "navy", "sage", "clay"];
+
+/* Step 0: generate true demand, then damage it. */
+function generate(seed) {
+  const rng = makeRng(seed);
+  const skus = [];
+  const slow = new Set();
+  while (slow.size < 5) slow.add(rng.int(0, N_SKU - 1));
+  for (let i = 0; i < N_SKU; i++) {
+    const id = "SKU-" + (1001 + i);
+    const name = TYPES[Math.floor(i / COLOURS.length)] + ", " + COLOURS[i % COLOURS.length];
+    const intermittent = slow.has(i);
+    const base = Math.exp(rng.range(Math.log(30), Math.log(400)));
+    const growth = rng.range(-0.12, 0.3);
+    const a1 = rng.range(0.1, 0.35), p1 = rng.range(0, 52);
+    const a2 = rng.range(0, 0.12), p2 = rng.range(0, 52);
+    const holiday = rng.range(0.2, 0.8);
+    const cv = rng.range(0.08, 0.2);
+    const yearlyPromo = [rng.int(0, 51), rng.int(0, 51)], yearlyLift = [rng.range(1.3, 1.6), rng.range(1.3, 1.6)];
+    const rate = rng.range(0.25, 0.45), size = rng.range(0.8, 1.8);
+    const qty = new Array(WEEKS);
+    let drift = 0;
+    for (let t = 0; t < WEEKS; t++) {
+      const w = t % 52;
+      drift += rng.normal() * 0.012;
+      let season = 1 + a1 * Math.cos(2 * Math.PI * (w - p1) / 52) + a2 * Math.cos(4 * Math.PI * (w - p2) / 52)
+        + holiday * Math.exp(-Math.pow((w - 48) / 2.5, 2));
+      if (w === yearlyPromo[0]) season *= yearlyLift[0];
+      if (w === yearlyPromo[1]) season *= yearlyLift[1];
+      const adhoc = rng.u() < 0.04 ? rng.range(1.4, 2.0) : 1;
+      if (intermittent) {
+        const p = Math.min(0.9, rate * season * adhoc);
+        qty[t] = rng.u() < p ? 1 + rng.poisson(size) : 0;
+      } else {
+        const mean = base * Math.pow(1 + growth, t / 52) * Math.exp(drift) * season * adhoc;
+        qty[t] = Math.max(0, Math.round(mean * (1 + rng.normal() * cv) + rng.normal() * Math.sqrt(mean) * 0.5));
+      }
+    }
+    skus.push({ id, name, intermittent, truth: qty });
+  }
+  // Raw rows, one per SKU-week, then inject problems into distinct cells.
+  const cells = [];
+  for (let s = 0; s < N_SKU; s++) for (let t = 0; t < WEEKS; t++) cells.push(s * WEEKS + t);
+  for (let i = cells.length - 1; i > 0; i--) { const j = rng.int(0, i); const x = cells[i]; cells[i] = cells[j]; cells[j] = x; }
+  const want = { duplicates: rng.int(70, 110), missing: rng.int(90, 130), negatives: rng.int(35, 55), outliers: rng.int(22, 34) };
+  const kind = new Map();
+  const injected = { duplicates: 0, missing: 0, negatives: 0, outliers: 0 };
+  let c = 0;
+  for (const k of ["duplicates", "missing", "negatives", "outliers"]) {
+    while (injected[k] < want[k] && c < cells.length) {
+      const cell = cells[c++];
+      const v = skus[Math.floor(cell / WEEKS)].truth[cell % WEEKS];
+      if ((k === "negatives" || k === "outliers") && v <= 0) continue;
+      kind.set(cell, k); injected[k]++;
+    }
+  }
+  const rows = [];
+  for (let s = 0; s < N_SKU; s++) for (let t = 0; t < WEEKS; t++) {
+    const cell = s * WEEKS + t, k = kind.get(cell), v = skus[s].truth[t];
+    if (k === "missing") continue;
+    let q = v;
+    if (k === "negatives") q = -v;
+    if (k === "outliers") q = Math.round(v * rng.range(8, 15)) + 20;
+    rows.push({ sku: s, week: t, qty: q });
+    if (k === "duplicates") rows.push({ sku: s, week: t, qty: q });
+  }
+  // Raw extracts are not ordered. Shuffle so the pipeline cannot rely on order.
+  for (let i = rows.length - 1; i > 0; i--) { const j = rng.int(0, i); const x = rows[i]; rows[i] = rows[j]; rows[j] = x; }
+  return { skus, rows, injected };
+}
+
+function median(a) {
+  const b = a.slice().sort((x, y) => x - y), n = b.length;
+  return n ? (n % 2 ? b[(n - 1) / 2] : (b[n / 2 - 1] + b[n / 2]) / 2) : 0;
+}
+
+/* Steps 1 to 4: the data-quality pipeline. Returns clean series per SKU plus counts. */
+function cleanPipeline(rows, nSku) {
+  const counts = { rowsIn: rows.length, duplicates: 0, imputed: 0, negatives: 0, outliers: 0, rowsOut: 0 };
+  const series = [], flags = [];
+  for (let s = 0; s < nSku; s++) { series.push(new Array(WEEKS).fill(null)); flags.push(new Array(WEEKS).fill("")); }
+  // 1. Duplicates: keep the first row for each SKU-week key.
+  for (const r of rows) {
+    if (series[r.sku][r.week] !== null) { counts.duplicates++; continue; }
+    series[r.sku][r.week] = r.qty;
+  }
+  for (let s = 0; s < nSku; s++) {
+    const y = series[s], f = flags[s];
+    // 2. Missing weeks: seasonal interpolation. Average of (a) a straight line between the nearest
+    //    present weeks on the same side of the train/holdout split and (b) the same week a year earlier.
+    const present = y.map(v => v !== null);
+    for (let t = 0; t < WEEKS; t++) {
+      if (present[t]) continue;
+      const lo = t < TRAIN ? 0 : TRAIN, hi = t < TRAIN ? TRAIN - 1 : WEEKS - 1;
+      let a = t - 1, b = t + 1;
+      while (a >= lo && !present[a]) a--;
+      while (b <= hi && !present[b]) b++;
+      const va = a >= lo ? Math.abs(y[a]) : null, vb = b <= hi ? Math.abs(y[b]) : null;
+      let lin;
+      if (va !== null && vb !== null) lin = va + (vb - va) * (t - a) / (b - a);
+      else lin = va !== null ? va : (vb !== null ? vb : 0);
+      const ly = t - PERIOD >= 0 && present[t - PERIOD] ? Math.abs(y[t - PERIOD]) : null;
+      y[t] = Math.round(ly === null ? lin : (lin + ly) / 2);
+      f[t] = "imputed"; counts.imputed++;
+    }
+    // 3. Negatives: unit sales cannot be negative. Treated as sign errors, so take the absolute value.
+    for (let t = 0; t < WEEKS; t++) if (y[t] < 0) { y[t] = -y[t]; f[t] = "sign fixed"; counts.negatives++; }
+    // 4. Outliers: cap at trailing 8-week median + max(6 x MAD, 2 x median, 6). Trailing so it never looks ahead.
+    const orig = y.slice();
+    for (let t = 0; t < WEEKS; t++) {
+      const win = t >= 8 ? orig.slice(t - 8, t) : orig.slice(0, 9).filter((_, i) => i !== t);
+      const med = median(win);
+      const mad = 1.4826 * median(win.map(v => Math.abs(v - med)));
+      const cap = Math.round(med + Math.max(6 * mad, 2 * med, 6));
+      if (orig[t] > cap) { y[t] = cap; f[t] = f[t] ? f[t] + ", capped" : "capped"; counts.outliers++; }
+    }
+    counts.rowsOut += y.length;
+  }
+  return { series, flags, counts };
+}
+
+/* Starting level, trend and 52 seasonal offsets from the full years available. */
+function initialState(y, period) {
+  const years = Math.floor(y.length / period), means = [];
+  for (let k = 0; k < years; k++) { let s = 0; for (let i = 0; i < period; i++) s += y[k * period + i]; means.push(s / period); }
+  const trend = years > 1 ? (means[years - 1] - means[0]) / ((years - 1) * period) : 0;
+  const season = new Array(period).fill(0);
+  for (let i = 0; i < period; i++) {
+    for (let k = 0; k < years; k++) season[i] += y[k * period + i] - (means[k] + trend * (i - (period - 1) / 2));
+    season[i] /= years;
+  }
+  // Two or three years give a noisy offset per week, so smooth each one with its two neighbours.
+  const smooth = season.map((v, i) => (season[(i + period - 1) % period] + v + season[(i + 1) % period]) / 3);
+  return { level: means[0] - trend * (period + 1) / 2, trend, season: smooth };
+}
+
+function holtWinters(y, period, alpha, beta, gamma, horizon) {
+  const init = initialState(y, period);
+  let level = init.level, trend = init.trend;
+  const season = init.season;
+  for (let t = 0; t < y.length; t++) {
+    const s = season[t % period];            // offset for this week of the year
+    const prevLevel = level;
+    // level: deseasonalised actual, blended with where we expected to be
+    level = alpha * (y[t] - s) + (1 - alpha) * (prevLevel + trend);
+    // trend: latest change in level, blended with the old trend
+    trend = beta * (level - prevLevel) + (1 - beta) * trend;
+    // season: what is left after the level, blended with last year's offset
+    season[t % period] = gamma * (y[t] - level) + (1 - gamma) * s;
+  }
+  const forecast = [];
+  for (let k = 1; k <= horizon; k++) {
+    const f = level + k * trend + season[(y.length + k - 1) % period];
+    forecast.push(Math.max(0, f));           // demand cannot be negative
+  }
+  return forecast;
+}
+
+function seasonalNaive(y, period, horizon) {
+  const out = [];
+  for (let k = 0; k < horizon; k++) out.push(y[y.length + k - period]);
+  return out;
+}
+
+/* Fit one SKU: choose weights on the validation slice, then forecast the untouched holdout. */
+function fitSku(y, flags) {
+  const train = y.slice(0, TRAIN), test = y.slice(TRAIN);
+  const fitPart = train.slice(0, TRAIN - VAL), valPart = train.slice(TRAIN - VAL);
+  let best = null;
+  for (const a of GRID.alpha) for (const b of GRID.beta) for (const g of GRID.gamma) {
+    const f = holtWinters(fitPart, PERIOD, a, b, g, VAL);
+    let err = 0;
+    for (let i = 0; i < VAL; i++) err += Math.abs(valPart[i] - f[i]);
+    if (best === null || err < best.err) best = { err, a, b, g };
+  }
+  const model = holtWinters(train, PERIOD, best.a, best.b, best.g, TEST);
+  const base = seasonalNaive(train, PERIOD, TEST);
+  const scored = [];
+  for (let i = 0; i < TEST; i++) if (flags[TRAIN + i].indexOf("imputed") < 0) scored.push(i);
+  const mM = metrics(test, model, scored), mB = metrics(test, base, scored);
+  const future = holtWinters(y, PERIOD, best.a, best.b, best.g, FUTURE);
+  return { params: best, model, base, test, scored, mM, mB, future };
+}
+
+function metrics(actual, fc, idx) {
+  let abs = 0, sum = 0, tot = 0, sq = 0;
+  for (const i of idx) { const e = fc[i] - actual[i]; abs += Math.abs(e); sum += e; tot += actual[i]; sq += e * e; }
+  const n = idx.length, mean = n ? sum / n : 0;
+  return {
+    n, abs, sum, tot,
+    wape: tot > 0 ? abs / tot : NaN,
+    mae: n ? abs / n : NaN,
+    bias: tot > 0 ? sum / tot : NaN,
+    sd: n > 1 ? Math.sqrt(Math.max(0, (sq - n * mean * mean) / (n - 1))) : 0
+  };
+}
+
+function overall(fits) {
+  const o = { absM: 0, absB: 0, sumM: 0, sumB: 0, tot: 0, n: 0, wins: 0, comparable: 0 };
+  for (const f of fits) {
+    o.absM += f.mM.abs; o.absB += f.mB.abs; o.sumM += f.mM.sum; o.sumB += f.mB.sum; o.tot += f.mM.tot; o.n += f.mM.n;
+    if (isFinite(f.mM.wape) && isFinite(f.mB.wape)) { o.comparable++; if (f.mM.wape < f.mB.wape) o.wins++; }
+  }
+  o.wapeM = o.absM / o.tot; o.wapeB = o.absB / o.tot;
+  o.maeM = o.absM / o.n; o.maeB = o.absB / o.n;
+  o.biasM = o.sumM / o.tot; o.biasB = o.sumB / o.tot;
+  o.improvement = (o.wapeB - o.wapeM) / o.wapeB;
+  o.share = o.wins / o.comparable;
+  return o;
+}
+
+const Z = { 90: 1.2816, 95: 1.6449, 98: 2.0537, 99: 2.3263 };   // standard normal quantiles
+function replenishment(fit, lead, service, cycle, onHand) {
+  const sum = (n) => { let s = 0; for (let k = 0; k < n; k++) s += fit.future[k]; return s; };
+  const sigma = fit.mM.sd;
+  const safety = Z[service] * sigma * Math.sqrt(lead);
+  const leadDemand = sum(lead);
+  const reorderPoint = leadDemand + safety;
+  const orderUpTo = sum(lead + cycle) + safety;
+  const order = onHand <= reorderPoint ? Math.max(0, Math.ceil(orderUpTo - onHand)) : 0;
+  return { sigma, safety, leadDemand, reorderPoint, orderUpTo, order };
+}
+/*CORE-END*/
+
+/* ---------- page ---------- */
+const $ = (id) => document.getElementById(id);
+const fmtInt = (n) => Math.round(n).toLocaleString("en-US");
+const fmtPct = (x, d) => isFinite(x) ? (x * 100).toFixed(d === undefined ? 1 : d) + "%" : "n/a";
+const fmtSigned = (x) => isFinite(x) ? (x > 0 ? "+" : x < 0 ? "−" : "") + Math.abs(x * 100).toFixed(1) + "%" : "n/a";
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
+
+const state = { data: null, clean: null, fits: [], rows: [], sel: 0, sort: { k: "impr", dir: 1 }, runId: 0, hover: null };
+
+function setStatus(t) { $("status").textContent = t; }
+function setProg(p) { $("prog").style.width = Math.round(p * 100) + "%"; }
+
+function run() {
+  const seedEl = $("seed");
+  let seed = Math.floor(Number(seedEl.value));
+  if (!isFinite(seed) || seed < 1) { seed = 20260; }
+  seedEl.value = seed;
+  const myRun = ++state.runId;
+  $("run").disabled = true;
+  setProg(0.02); setStatus("Generating raw sales rows for seed " + seed + "…");
+  const t0 = performance.now();
+  setTimeout(() => {
+    if (myRun !== state.runId) return;
+    const data = generate(seed);
+    setProg(0.08); setStatus("Cleaning " + fmtInt(data.rows.length) + " raw rows…");
+    setTimeout(() => {
+      if (myRun !== state.runId) return;
+      const clean = cleanPipeline(data.rows, data.skus.length);
+      state.data = data; state.clean = clean;
+      renderPipeline();
+      const fits = [];
+      let i = 0;
+      const step = () => {
+        if (myRun !== state.runId) return;
+        const until = performance.now() + 12;
+        while (i < data.skus.length && performance.now() < until) { fits.push(fitSku(clean.series[i], clean.flags[i])); i++; }
+        setProg(0.1 + 0.9 * i / data.skus.length);
+        setStatus("Fitting Holt-Winters: " + i + " of " + data.skus.length + " SKUs…");
+        if (i < data.skus.length) { setTimeout(step, 0); return; }
+        state.fits = fits;
+        finish(seed, performance.now() - t0);
+      };
+      setTimeout(step, 0);
+    }, 0);
+  }, 0);
+}
+
+function finish(seed, ms) {
+  const { data, fits } = state;
+  state.rows = fits.map((f, i) => ({
+    i, id: data.skus[i].id, name: data.skus[i].name + (data.skus[i].intermittent ? " (slow seller)" : ""),
+    units: f.mM.tot, wapeM: f.mM.wape, wapeB: f.mB.wape,
+    impr: (f.mB.wape - f.mM.wape) / f.mB.wape, biasM: f.mM.bias,
+    winner: !isFinite(f.mM.wape) || !isFinite(f.mB.wape) ? "n/a" : f.mM.wape < f.mB.wape ? "Holt-Winters" : f.mM.wape > f.mB.wape ? "Baseline" : "Tie"
+  }));
+  const o = state.overall = overall(fits);
+  const c = state.clean.counts;
+  $("m-wm").textContent = fmtPct(o.wapeM);
+  $("m-wb").textContent = fmtPct(o.wapeB);
+  $("m-imp").textContent = fmtSigned(o.improvement);
+  $("m-share").textContent = fmtPct(o.share, 0);
+  $("m-share-l").textContent = "Share of SKUs where Holt-Winters wins (" + o.wins + " of " + o.comparable + ")";
+  $("m-rows").textContent = fmtInt(c.duplicates + c.imputed + c.negatives + c.outliers);
+  $("overall-extra").textContent = "Also on the holdout, all SKUs pooled: MAE " + o.maeM.toFixed(1) + " units a week for Holt-Winters against " + o.maeB.toFixed(1)
+    + " for the baseline. Bias " + fmtSigned(o.biasM) + " against " + fmtSigned(o.biasB) + ". " + fmtInt(o.n) + " SKU-weeks scored.";
+
+  const losers = state.rows.filter(r => r.winner === "Baseline").sort((a, b) => a.impr - b.impr);
+  $("tablesum").textContent = "Holt-Winters has the lower WAPE on " + o.wins + " of " + o.comparable + " SKUs. "
+    + (losers.length ? "The seasonal-naive baseline wins on " + losers.length + ": " + losers.map(r => r.id).join(", ") + ". They are listed first." : "The baseline does not win on any SKU for this seed.");
+
+  // SKU select and quick picks
+  const sel = $("sku"); sel.textContent = "";
+  state.rows.forEach(r => { const op = el("option", "", r.id + " · " + r.name); op.value = r.i; sel.appendChild(op); });
+  const ranked = state.rows.filter(r => isFinite(r.wapeM)).sort((a, b) => a.wapeM - b.wapeM);
+  fillPicks($("best"), ranked.slice(0, 5));
+  fillPicks($("worst"), ranked.slice(-5).reverse());
+  state.sort = { k: "impr", dir: 1 };
+  selectSku(ranked.length ? ranked[Math.floor(ranked.length / 2)].i : 0);
+  renderTable();
+  setProg(1);
+  setStatus("Done. Seed " + seed + ": " + fmtInt(state.clean.counts.rowsIn) + " raw rows cleaned and " + fits.length + " SKUs fitted in " + Math.round(ms) + " ms.");
+  $("run").disabled = false;
+  document.body.setAttribute("data-done", "1");
+}
+
+function fillPicks(box, rows) {
+  box.textContent = "";
+  rows.forEach(r => {
+    const b = el("button", "chip", r.id + " · " + fmtPct(r.wapeM, 0));
+    b.type = "button"; b.dataset.i = r.i; b.setAttribute("aria-pressed", "false");
+    b.setAttribute("aria-label", r.id + ", " + r.name + ", WAPE " + fmtPct(r.wapeM, 0));
+    b.addEventListener("click", () => selectSku(r.i));
+    box.appendChild(b);
+  });
+}
+
+function renderPipeline() {
+  const c = state.clean.counts, inj = state.data.injected;
+  const steps = [
+    ["Rows in", c.rowsIn, "Raw SKU-week rows, in no particular order"],
+    ["Duplicates removed", c.duplicates, "Same SKU and week seen twice, first row kept"],
+    ["Missing weeks imputed", c.imputed, "Seasonal interpolation: mean of a line between neighbouring weeks and the same week last year"],
+    ["Negatives fixed", c.negatives, "Mis-keyed returns, treated as sign errors"],
+    ["Outliers winsorised", c.outliers, "Capped at trailing 8-week median + max(6 × MAD, 2 × median, 6)"],
+    ["Rows out", c.rowsOut, state.data.skus.length + " SKUs × " + WEEKS + " weeks, one row each"]
+  ];
+  const ol = $("steps"); ol.textContent = "";
+  steps.forEach(s => { const li = el("li"); li.appendChild(el("span", "t", s[0])); li.appendChild(el("b", "", fmtInt(s[1]))); li.appendChild(el("span", "d", s[2])); ol.appendChild(li); });
+  $("injected").textContent = "For comparison, the generator planted " + inj.duplicates + " duplicates, " + inj.missing + " missing weeks, "
+    + inj.negatives + " negatives and " + inj.outliers + " outliers. The outlier rule can also cap a genuine spike, or miss an inflated value on a slow seller, so that count need not match.";
+}
+
+function selectSku(i) {
+  state.sel = Number(i);
+  $("sku").value = String(state.sel);
+  document.querySelectorAll(".chip").forEach(b => b.setAttribute("aria-pressed", String(Number(b.dataset.i) === state.sel)));
+  document.querySelectorAll("#results tbody tr").forEach(tr => tr.classList.toggle("sel", Number(tr.dataset.i) === state.sel));
+  const r = state.rows[state.sel], f = state.fits[state.sel];
+  $("skuname").textContent = r.id + " · " + r.name;
+  $("skustats").textContent = "WAPE " + fmtPct(r.wapeM) + " Holt-Winters, " + fmtPct(r.wapeB) + " seasonal naive. MAE " + f.mM.mae.toFixed(1) + " against " + f.mB.mae.toFixed(1)
+    + ". Bias " + fmtSigned(r.biasM) + ". Weights α " + f.params.a + ", β " + f.params.b + ", γ " + f.params.g + ".";
+  state.hover = null;
+  drawChart();
+  renderWeeks();
+  // default stock position: two weeks of forecast demand, so the example starts near the reorder point
+  $("onhand").value = Math.round(f.future[0] + f.future[1]);
+  renderReplen();
+}
+
+function renderWeeks() {
+  const f = state.fits[state.sel], flags = state.clean.flags[state.sel];
+  const tb = $("weeks").tBodies[0]; tb.textContent = "";
+  for (let i = 0; i < TEST; i++) {
+    const tr = el("tr");
+    tr.appendChild(el("td", "", "Week " + (TRAIN + i + 1)));
+    tr.appendChild(el("td", "num", fmtInt(f.test[i])));
+    tr.appendChild(el("td", "num", fmtInt(f.model[i])));
+    tr.appendChild(el("td", "num", fmtInt(f.base[i])));
+    const fl = flags[TRAIN + i];
+    tr.appendChild(el("td", "", fl ? fl + (fl.indexOf("imputed") >= 0 ? ", not scored" : "") : ""));
+    tb.appendChild(tr);
+  }
+}
+
+function clampInt(inp, lo, hi, dflt) {
+  let v = Math.round(Number(inp.value));
+  if (!isFinite(v)) v = dflt;
+  return Math.min(hi, Math.max(lo, v));
+}
+function renderReplen() {
+  if (!state.fits.length) return;
+  const f = state.fits[state.sel];
+  const lead = clampInt($("lead"), 1, 8, 2), cycle = clampInt($("cycle"), 1, 12, 4);
+  const service = $("svc").value;
+  const onHand = Math.max(0, Math.round(Number($("onhand").value) || 0));
+  const r = replenishment(f, lead, service, cycle, onHand);
+  const box = $("replen"); box.textContent = "";
+  [["Forecast error σ, units a week", r.sigma.toFixed(1)],
+   ["Demand over lead time", fmtInt(r.leadDemand)],
+   ["Safety stock", fmtInt(Math.ceil(r.safety))],
+   ["Reorder point", fmtInt(Math.ceil(r.reorderPoint))],
+   ["Suggested order", fmtInt(r.order)]].forEach(([l, v]) => { const d = el("div"); d.appendChild(el("b", "", v)); d.appendChild(el("span", "", l)); box.appendChild(d); });
+  $("advice").textContent = onHand <= r.reorderPoint
+    ? "Order now. " + fmtInt(onHand) + " on hand is at or below the reorder point of " + fmtInt(Math.ceil(r.reorderPoint)) + ". Ordering " + fmtInt(r.order) + " units brings stock up to " + fmtInt(Math.ceil(r.orderUpTo)) + ", enough for " + (lead + cycle) + " weeks of forecast demand plus safety stock."
+    : "No order yet. " + fmtInt(onHand) + " on hand is above the reorder point of " + fmtInt(Math.ceil(r.reorderPoint)) + ".";
+  $("replen-note").textContent = "Safety stock = z × σ × √lead time = " + Z[service] + " × " + r.sigma.toFixed(1) + " × √" + lead + ". Units on hand starts at two weeks of forecast demand for the selected SKU. Change it to see the advice flip.";
+}
+
+/* ---------- table ---------- */
+function renderTable() {
+  const { k, dir } = state.sort;
+  const rows = state.rows.slice().sort((a, b) => {
+    const x = a[k], y = b[k];
+    if (typeof x === "string") return dir * x.localeCompare(y);
+    if (!isFinite(x) && !isFinite(y)) return 0;
+    if (!isFinite(x)) return 1;
+    if (!isFinite(y)) return -1;
+    return dir * (x - y);
+  });
+  const tb = $("results").tBodies[0]; tb.textContent = "";
+  rows.forEach(r => {
+    const tr = el("tr"); tr.dataset.i = r.i; if (r.i === state.sel) tr.className = "sel";
+    const td0 = el("td"); const b = el("button", "rowbtn", r.id); b.type = "button";
+    b.setAttribute("aria-label", "Chart " + r.id + ", " + r.name);
+    b.addEventListener("click", () => { selectSku(r.i); $("sku").scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); });
+    td0.appendChild(b); tr.appendChild(td0);
+    tr.appendChild(el("td", "name", r.name));
+    tr.appendChild(el("td", "num", fmtInt(r.units)));
+    tr.appendChild(el("td", "num", fmtPct(r.wapeM)));
+    tr.appendChild(el("td", "num", fmtPct(r.wapeB)));
+    tr.appendChild(el("td", "num", fmtSigned(r.impr)));
+    tr.appendChild(el("td", "num", fmtSigned(r.biasM)));
+    const tdw = el("td"); tdw.appendChild(el("span", "win " + (r.winner === "Baseline" ? "base" : "model"), r.winner)); tr.appendChild(tdw);
+    tb.appendChild(tr);
+  });
+  document.querySelectorAll("#results thead th").forEach(th => {
+    if (th.dataset.k === k) th.setAttribute("aria-sort", dir > 0 ? "ascending" : "descending"); else th.removeAttribute("aria-sort");
+  });
+}
+document.querySelectorAll("#results thead th").forEach(th => {
+  th.querySelector("button").addEventListener("click", () => {
+    const k = th.dataset.k;
+    if (state.sort.k === k) state.sort.dir *= -1; else state.sort = { k, dir: (k === "id" || k === "name" || k === "impr" || k === "winner") ? 1 : -1 };
+    renderTable();
+  });
+});
+
+/* ---------- chart ---------- */
+const NS = "http://www.w3.org/2000/svg";
+function svg(tag, attrs, text) { const e = document.createElementNS(NS, tag); for (const a in attrs) e.setAttribute(a, attrs[a]); if (text !== undefined) e.textContent = text; return e; }
+let geom = null;
+
+function niceStep(v) {
+  // a round step that gives three to five gridlines
+  const raw = Math.max(v, 1) / 4, p = Math.pow(10, Math.floor(Math.log10(raw))), m = raw / p;
+  return Math.max(1, (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * p);
+}
+
+function drawChart() {
+  const svgEl = $("chart");
+  if (!state.fits.length) return;
+  const W = Math.max(280, Math.round($("chartbox").clientWidth));
+  const narrow = W < 520;
+  const H = narrow ? 280 : 360;
+  const m = { l: narrow ? 38 : 46, r: 10, t: 22, b: 30 };
+  const y = state.clean.series[state.sel], f = state.fits[state.sel];
+  const start = WEEKS - Number($("view").value);
+  let top = 0;
+  for (let t = start; t < WEEKS; t++) top = Math.max(top, y[t]);
+  for (let i = 0; i < TEST; i++) top = Math.max(top, f.model[i], f.base[i]);
+  const stepY = niceStep(top);
+  top = Math.ceil(top / stepY) * stepY;
+  const X = (t) => m.l + (W - m.l - m.r) * (t - start) / (WEEKS - 1 - start);
+  const Y = (v) => m.t + (H - m.t - m.b) * (1 - v / top);
+  geom = { W, H, m, X, Y, top, start };
+  svgEl.setAttribute("viewBox", "0 0 " + W + " " + H);
+  svgEl.setAttribute("height", H);
+  svgEl.textContent = "";
+  const r = state.rows[state.sel];
+  svgEl.setAttribute("aria-label", "Weekly units for " + r.id + ", " + r.name + ". Cleaned history, then 26 holdout weeks with actuals, the Holt-Winters forecast and the seasonal-naive forecast. Showing weeks " + (start + 1) + " to 156. Holdout WAPE " + fmtPct(r.wapeM) + " for Holt-Winters and " + fmtPct(r.wapeB) + " for seasonal naive.");
+
+  // holdout band and gridlines
+  svgEl.appendChild(svg("rect", { class: "hold", x: X(TRAIN - 0.5), y: m.t, width: X(WEEKS - 1) - X(TRAIN - 0.5), height: H - m.t - m.b, rx: 4 }));
+  for (let v = 0; v <= top + 1e-9; v += stepY) {
+    const yy = Math.round(Y(v)) + 0.5;
+    svgEl.appendChild(svg("line", { class: v === 0 ? "axis" : "gridline", x1: m.l, x2: W - m.r, y1: yy, y2: yy }));
+    svgEl.appendChild(svg("text", { x: m.l - 6, y: yy + 4, "text-anchor": "end" }, v >= 1000 ? (v / 1000).toFixed(v % 1000 ? 1 : 0) + "k" : String(v)));
+  }
+  const xt = start === 0 ? [[0, "Year 1"], [52, "Year 2"], [104, "Year 3"]] : [[78, "Week 79"], [104, "Week 105"], [130, "Week 131"]];
+  xt.forEach(([t, lab]) => {
+    svgEl.appendChild(svg("line", { class: "axis", x1: X(t), x2: X(t), y1: H - m.b, y2: H - m.b + 5 }));
+    svgEl.appendChild(svg("text", { x: X(t) + 4, y: H - 10 }, lab));
+  });
+  // train / holdout split marker
+  const sx = Math.round(X(TRAIN - 0.5)) + 0.5;
+  svgEl.appendChild(svg("line", { class: "split", x1: sx, x2: sx, y1: m.t - 6, y2: H - m.b }));
+  svgEl.appendChild(svg("text", { x: sx - 6, y: m.t - 8, "text-anchor": "end" }, narrow ? "Train" : "Train, up to week 130"));
+  svgEl.appendChild(svg("text", { x: sx + 6, y: m.t - 8 }, narrow ? "Holdout" : "Holdout, 26 weeks"));
+
+  const path = (vals, start) => vals.map((v, i) => (i ? "L" : "M") + X(start + i).toFixed(1) + " " + Y(v).toFixed(1)).join("");
+  svgEl.appendChild(svg("path", { class: "l-history", d: path(y.slice(start, TRAIN), start) }));
+  svgEl.appendChild(svg("path", { class: "l-base", d: path(f.base, TRAIN) }));
+  svgEl.appendChild(svg("path", { class: "l-actual", d: path(y.slice(TRAIN - 1), TRAIN - 1) }));
+  svgEl.appendChild(svg("path", { class: "l-model", d: path(f.model, TRAIN) }));
+  const g = svg("g", { id: "hoverlayer" }); svgEl.appendChild(g);
+  drawHover();
+}
+
+function drawHover() {
+  const g = document.getElementById("hoverlayer"), tip = $("tip");
+  if (!g) return;
+  g.textContent = "";
+  const t = state.hover;
+  if (t === null || !geom) { tip.hidden = true; return; }
+  const { X, Y, m, H, W } = geom;
+  const y = state.clean.series[state.sel], f = state.fits[state.sel], flag = state.clean.flags[state.sel][t];
+  const x = X(t);
+  g.appendChild(svg("line", { class: "cross", x1: x, x2: x, y1: m.t, y2: H - m.b }));
+  const rows = [];
+  if (t < TRAIN) rows.push(["Cleaned history", y[t], "var(--s-history)", ""]);
+  else {
+    const i = t - TRAIN;
+    rows.push(["Actual", y[t], "var(--s-actual)", ""], ["Holt-Winters", f.model[i], "var(--s-model)", ""], ["Seasonal naive", f.base[i], "var(--s-base)", "4 3"]);
+  }
+  rows.forEach(r => g.appendChild(svg("circle", { class: "dot", cx: x, cy: Y(r[1]), r: 4.5, style: "fill:" + r[2] })));
+  tip.textContent = "";
+  tip.appendChild(el("div", "w", "Week " + (t + 1) + " (year " + (Math.floor(t / 52) + 1) + ", week " + (t % 52 + 1) + ")" + (flag ? " · " + flag : "")));
+  rows.forEach(r => {
+    const d = el("div", "r"), s = el("span");
+    const k = svg("svg", { width: 16, height: 8, "aria-hidden": "true" });
+    k.appendChild(svg("line", { x1: 0, x2: 16, y1: 4, y2: 4, style: "stroke:" + r[2] + ";stroke-width:2" + (r[3] ? ";stroke-dasharray:" + r[3] : "") }));
+    s.appendChild(k); s.appendChild(document.createTextNode(r[0]));
+    d.appendChild(s); d.appendChild(el("b", "", fmtInt(r[1])));
+    tip.appendChild(d);
+  });
+  tip.hidden = false;
+  const tw = tip.offsetWidth, th = tip.offsetHeight;
+  let left = x + 12; if (left + tw > W) left = x - 12 - tw; if (left < 0) left = 0;
+  tip.style.transform = "translate(" + Math.round(left) + "px," + Math.round(Math.max(0, m.t + 4)) + "px)";
+  void th;
+}
+
+(function chartEvents() {
+  const s = $("chart");
+  const toWeek = (ev) => {
+    if (!geom) return null;
+    const r = s.getBoundingClientRect();
+    const px = (ev.clientX - r.left) * geom.W / r.width;
+    const t = geom.start + Math.round((px - geom.m.l) / (geom.W - geom.m.l - geom.m.r) * (WEEKS - 1 - geom.start));
+    return Math.min(WEEKS - 1, Math.max(geom.start, t));
+  };
+  s.addEventListener("pointermove", (ev) => { state.hover = toWeek(ev); drawHover(); });
+  s.addEventListener("pointerdown", (ev) => { state.hover = toWeek(ev); drawHover(); });
+  s.addEventListener("pointerleave", () => { if (document.activeElement !== s) { state.hover = null; drawHover(); } });
+  s.addEventListener("focus", () => { if (state.hover === null) { state.hover = TRAIN; drawHover(); } });
+  s.addEventListener("blur", () => { state.hover = null; drawHover(); });
+  s.addEventListener("keydown", (ev) => {
+    const d = ev.key === "ArrowRight" ? 1 : ev.key === "ArrowLeft" ? -1 : ev.key === "PageDown" ? 13 : ev.key === "PageUp" ? -13 : 0;
+    if (ev.key === "Escape") { state.hover = null; drawHover(); return; }
+    if (ev.key === "Home") { state.hover = geom ? geom.start : 0; } else if (ev.key === "End") { state.hover = WEEKS - 1; }
+    else if (d) { state.hover = Math.min(WEEKS - 1, Math.max(geom ? geom.start : 0, (state.hover === null ? TRAIN : state.hover) + d)); }
+    else return;
+    ev.preventDefault(); drawHover();
+  });
+  if ("ResizeObserver" in window) {
+    let lastW = 0;
+    new ResizeObserver((es) => { const w = Math.round(es[0].contentRect.width); if (w !== lastW) { lastW = w; drawChart(); } }).observe($("chartbox"));
+  } else window.addEventListener("resize", drawChart);
+})();
+
+/* ---------- wiring ---------- */
+$("sku").addEventListener("change", (e) => selectSku(e.target.value));
+$("view").addEventListener("change", () => { state.hover = null; drawChart(); });
+["lead", "svc", "cycle", "onhand"].forEach(id => { $(id).addEventListener("input", renderReplen); $(id).addEventListener("change", renderReplen); });
+$("run").addEventListener("click", run);
+$("reseed").addEventListener("click", () => { $("seed").value = 1 + Math.floor(Math.random() * 999999); run(); });
+$("seed").addEventListener("keydown", (e) => { if (e.key === "Enter") run(); });
+$("code").textContent = holtWinters.toString();
+run();
+</script>
+</body>
+</html>

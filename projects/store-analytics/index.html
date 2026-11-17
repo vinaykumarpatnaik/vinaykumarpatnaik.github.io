@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Store performance analytics — Vinay Kumar Patnaik</title>
+<meta name="description" content="An interactive retail dashboard over a generated year of store transactions, with a difference-in-differences analysis that measures the lift of a promotion and checks it against the known answer.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="../shared.css">
+<style>
+  /* chart mark colours: one blue and one orange series, checked for colour-blind separation on both surfaces */
+  :root{--s1:#2a78d6;--s2:#eb6834;--grid:var(--hair);--band:rgba(0,0,0,.06)}
+  @media (prefers-color-scheme:dark){:root{--s1:#3987e5;--s2:#d95926;--band:rgba(255,255,255,.09)}}
+
+  .stack{display:grid;gap:14px}
+  .panel > h3{margin-bottom:4px}
+  .panel .hint{font-size:14px;color:var(--muted);max-width:70ch}
+  .controls label{flex:1 1 150px}
+  .controls select{width:100%}
+  .controls .seed{flex:0 1 120px}
+  .controls .seed input{width:100%}
+  .controls .btn{flex:0 0 auto}
+  .controls + .controls{margin-top:14px;padding-top:14px;border-top:1px solid var(--hair)}
+  .status{font-size:14px;color:var(--muted);margin-top:12px}
+
+  .kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+  @media (min-width:700px){.kpis{grid-template-columns:repeat(3,1fr)}}
+  @media (max-width:420px){.kpi{padding:14px}.kpi .v{font-size:24px}}
+  .kpi{background:var(--surface);border-radius:18px;padding:18px}
+  .kpi .l{font-size:14px;color:var(--muted);font-weight:600}
+  .kpi .v{font-size:28px;font-weight:800;letter-spacing:-0.03em;line-height:1.15;color:var(--ink);font-variant-numeric:tabular-nums;margin-top:4px;white-space:nowrap}
+  .kpi .d{font-size:13px;color:var(--body);margin-top:6px;font-variant-numeric:tabular-nums}
+  .kpi .d .ic{font-size:11px;margin-right:4px}
+  .kpi .d .up{color:var(--good)} .kpi .d .down{color:var(--bad)} .kpi .d .flat{color:var(--muted)}
+
+  .two{display:grid;gap:14px;grid-template-columns:1fr}
+  @media (min-width:820px){.two{grid-template-columns:3fr 2fr}}
+  .chart-head{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:end;justify-content:space-between;margin-bottom:10px}
+  .chart-head label{flex:0 1 220px}
+  .chart-head select{width:100%}
+  .chart{position:relative;margin-top:8px;border-radius:10px}
+  .chart svg{display:block;width:100%;overflow:visible}
+  .chart text{font-family:var(--font);font-size:12px;fill:var(--muted);font-variant-numeric:tabular-nums}
+  .chart text.strong{fill:var(--ink);font-weight:600}
+  .chart text.val{fill:var(--body)}
+  .chart .gridline{stroke:var(--grid);stroke-width:1}
+  .chart .band{fill:var(--band)}
+  .chart .cross{stroke:var(--muted);stroke-width:1}
+  .chart .dot{stroke:var(--surface);stroke-width:2}
+  .chart .barmark{fill:var(--s1)}
+  .chart .row.dim .barmark{opacity:.45}
+  .chart .row:hover .barmark,.chart .row.on .barmark{filter:brightness(1.15)}
+  .tip{position:absolute;pointer-events:none;z-index:2;background:var(--surface);color:var(--ink);border:1px solid var(--hair);border-radius:10px;padding:8px 10px;font-size:13px;line-height:1.35;box-shadow:0 6px 20px rgba(0,0,0,.14);white-space:nowrap;font-variant-numeric:tabular-nums}
+  .tip[hidden]{display:none}
+  .tip .t{color:var(--muted);font-size:12px}
+  .tip .r{display:flex;align-items:center;gap:6px}
+  .tip .r b{font-weight:700}
+  .tip .r span{color:var(--muted)}
+  .key{display:inline-block;width:14px;height:0;border-top:2px solid var(--s1);border-radius:2px;flex:none}
+  .key.k2{border-color:var(--s2)}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--body);margin-top:10px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .readout{font-size:14px;color:var(--muted);margin-top:8px;min-height:21px;font-variant-numeric:tabular-nums}
+  details{margin-top:10px;font-size:14px}
+  summary{cursor:pointer;color:var(--link);font-weight:600;min-height:44px;display:inline-flex;align-items:center}
+  details .scroll{max-height:260px;overflow:auto;margin-top:4px}
+
+  .st-row{display:grid;grid-template-columns:104px 1fr 56px;gap:10px;align-items:center;min-height:36px;font-size:15px;color:var(--body)}
+  .st-row .n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .st-row .p{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink);font-weight:600}
+  .st-row.dim{opacity:.5}
+  .st-row .bar > i{background:var(--s1);border-radius:0 980px 980px 0}
+
+  th button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;min-height:44px;padding:0;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+  th button:hover{color:var(--ink)}
+  th[aria-sort=ascending] button,th[aria-sort=descending] button{color:var(--ink)}
+  th .arr{font-size:10px;width:10px;display:inline-block}
+  tr.sel td{color:var(--ink);font-weight:600}
+  td .tag{margin-left:6px}
+  td.name{white-space:nowrap}
+  #store-table th,#store-table td{padding-inline:8px}
+  #did-table td,#did-table th{padding-inline:6px}
+  #did-table th[scope=row]{white-space:nowrap;font-size:inherit;font-weight:400;color:var(--body);padding:10px}
+
+  .did-grid{display:grid;gap:22px;grid-template-columns:1fr;margin-top:14px}
+  @media (min-width:820px){.did-grid{grid-template-columns:1fr 1fr}}
+  .did-nums{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-top:14px}
+  .did-num{background:var(--field);border-radius:14px;padding:14px}
+  .did-num .v{font-size:24px;font-weight:800;letter-spacing:-0.03em;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .did-num .l{font-size:13px;color:var(--muted);margin-top:2px}
+  .did-num .x{font-size:13px;color:var(--body);margin-top:4px;font-variant-numeric:tabular-nums}
+  .conclusion{font-size:17px;color:var(--ink);font-weight:600;margin-top:16px;max-width:70ch}
+  tr.total td{color:var(--ink);font-weight:700;border-bottom:0}
+  .metric .v.name{font-size:clamp(22px,2.8vw,28px);white-space:normal;line-height:1.1;letter-spacing:-0.03em}
+  .metric .l{font-variant-numeric:tabular-nums}
+  section > .wrap > h2 + p{margin-bottom:18px}
+  pre{margin-top:16px}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+</style>
+</head>
+<body>
+<nav><div class="wrap"><a class="me" href="/">Vinay Kumar Patnaik</a><a class="back" href="/#projects">All projects</a></div></nav>
+
+<header class="head wrap">
+  <p class="kind">Retail analytics</p>
+  <h1>Store performance analytics</h1>
+  <p class="sub">A dashboard over one year of weekly store data, plus one real analysis: measuring how much a promotion lifted sales, using difference-in-differences.</p>
+  <p class="note">This is a personal demo project. It runs on sample data that your browser generates from a seeded random number generator. It is not Alo Yoga's code or data, and the stores, categories and numbers are invented.</p>
+</header>
+
+<main>
+<section aria-labelledby="demo-h" style="padding-top:0">
+  <div class="wrap">
+    <h2 id="demo-h">Live demo</h2>
+    <p>Pick a slice of the business. Every number, chart and table below recalculates from the same rows.</p>
+    <div class="stack">
+
+      <div class="panel">
+        <div class="controls" role="group" aria-label="Filters">
+          <label>Period
+            <select id="f-period">
+              <option value="full">Full year</option>
+              <option value="last13">Last 13 weeks</option>
+              <option value="q1">Quarter 1 (weeks 1 to 13)</option>
+              <option value="q2">Quarter 2 (weeks 14 to 26)</option>
+              <option value="q3">Quarter 3 (weeks 27 to 39)</option>
+              <option value="q4">Quarter 4 (weeks 40 to 52)</option>
+            </select>
+          </label>
+          <label>Region <select id="f-region"></select></label>
+          <label>Store <select id="f-store"></select></label>
+          <label>Category <select id="f-cat"></select></label>
+        </div>
+        <div class="controls" role="group" aria-label="Sample data">
+          <label class="seed">Data seed <input type="number" id="seed" min="1" max="999999" step="1" value="2026" inputmode="numeric"></label>
+          <button class="btn btn-primary" id="run" type="button">Generate data again</button>
+          <button class="btn btn-ghost" id="reset" type="button">Reset to defaults</button>
+        </div>
+        <p class="status" id="status" role="status" aria-live="polite"></p>
+      </div>
+
+      <div class="kpis" id="kpis" aria-live="polite" aria-label="Key figures for the selected slice"></div>
+
+      <div class="panel">
+        <h3 id="line-title">Weekly net sales</h3>
+        <p class="hint" id="line-sub"></p>
+        <div class="chart" id="line-chart" tabindex="0" role="group" aria-describedby="line-help"></div>
+        <p class="readout" id="line-readout" aria-live="polite"></p>
+        <p class="sr" id="line-help">Use the left and right arrow keys to read the value for each week.</p>
+        <details><summary>Show weekly values as a table</summary><div class="scroll"><table id="line-table"></table></div></details>
+      </div>
+
+      <div class="two">
+        <div class="panel">
+          <div class="chart-head">
+            <div><h3>Store ranking</h3><p class="hint" id="rank-sub"></p></div>
+            <label>Rank stores by <select id="f-kpi"></select></label>
+          </div>
+          <div class="chart" id="rank-chart" role="img"></div>
+        </div>
+        <div class="panel">
+          <h3>Sell-through by category</h3>
+          <p class="hint" id="st-sub"></p>
+          <div id="st-bars" aria-live="polite" style="margin-top:12px"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Store table</h3>
+        <p class="hint" id="table-sub"></p>
+        <div class="scroll" style="margin-top:8px"><table id="store-table" aria-live="polite"></table></div>
+      </div>
+
+      <div class="panel" id="promo-panel">
+        <h3>Promotion analysis</h3>
+        <p class="hint" id="promo-sub"></p>
+        <p class="conclusion" id="promo-conclusion" aria-live="polite"></p>
+        <div class="did-nums" id="did-nums"></div>
+        <div class="did-grid">
+          <div>
+            <p class="hint" id="did-chart-sub"></p>
+            <div class="legend" aria-hidden="true"><span><i class="key"></i>Promo stores</span><span><i class="key k2"></i>Control stores</span></div>
+            <div class="chart" id="did-chart" tabindex="0" role="group" aria-describedby="line-help"></div>
+            <p class="readout" id="did-readout" aria-live="polite"></p>
+          </div>
+          <div>
+            <p class="hint" id="did-table-sub"></p>
+            <div class="scroll" style="margin-top:8px"><table id="did-table"></table></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="res-h">
+  <div class="wrap">
+    <h2 id="res-h">Results from this run</h2>
+    <p>These come from the data generated above. The same seed always gives the same numbers.</p>
+    <div class="metrics" id="metrics" aria-live="polite">
+      <div class="metric"><div class="v" id="m-rows"></div><div class="l">Rows analysed (store × category × week)</div></div>
+      <div class="metric"><div class="v" id="m-lift"></div><div class="l" id="m-lift-l"></div></div>
+      <div class="metric"><div class="v" id="m-true"></div><div class="l">True lift built into the data</div></div>
+      <div class="metric"><div class="v name" id="m-best"></div><div class="l" id="m-best-l"></div></div>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="how-h">
+  <div class="wrap">
+    <h2 id="how-h">How it works</h2>
+    <p>The page first builds the data. A seeded generator creates 12 stores in 4 regions and 5 categories, then writes one row per store, category and week with traffic, transactions, units, net sales, opening inventory and receipts. I gave the data the shape real store data has: stores of different sizes, a seasonal curve for each category, a holiday peak, and random noise on top.</p>
+    <p>Each headline figure is a ratio of sums over the filtered rows, not an average of averages. Conversion is transactions divided by traffic. Sell-through is units sold divided by opening inventory plus receipts. Weeks of supply is closing inventory divided by average weekly units. The change under each figure compares against the period of the same length just before.</p>
+    <p>One category runs a four-week promotion in half the stores. I paired stores by size and put one of each pair in the promotion, so the two groups are comparable. The promotion raises units by a fixed amount that the analysis is not told. Difference-in-differences then takes the change in the promo stores and subtracts the change in the control stores over the same weeks. That removes the seasonal movement both groups share and leaves the effect of the promotion.</p>
+    <p>For the interval I resample stores with replacement inside each group, recompute the estimate each time, and take the middle 95% of the results. The resampling uses the same seed, so it is reproducible. This is the function the page runs:</p>
+    <pre><code id="code"></code></pre>
+  </div>
+</section>
+
+<section aria-labelledby="what-h">
+  <div class="wrap">
+    <h2 id="what-h">What this shows</h2>
+    <p>I can take raw store rows and turn them into the figures a retail team uses to decide things: which stores convert, where stock is sitting too long, and whether a promotion paid for itself. I also check my own method. The data has a known answer built in, so the page shows whether the analysis finds it instead of asking you to trust it.</p>
+  </div>
+</section>
+</main>
+
+<footer><div class="wrap"><span>© 2026 Vinay Kumar Patnaik</span><a href="/#projects">All projects</a></div></footer>
+
+<script>
+(function(){
+'use strict';
+
+/* ---------- model constants ---------- */
+var DEFAULT_SEED = 2026;
+var WEEKS = 52;
+var REGIONS = ['North', 'South', 'East', 'West'];
+var STORE_NAMES = ['Alderbrook', 'Brightwater', 'Castlewick', 'Dunmere', 'Elmhaven', 'Foxhollow',
+                   'Glenmoor', 'Hartsfield', 'Ironvale', 'Juniper Vale', 'Kestrel Park', 'Larkstone'];
+var CATS = [
+  {name: 'Tops',        share: 0.30, price: 46,  upt: 1.55, cover: 6,  amp: 0.10, peak: 26, conv: 1.06},
+  {name: 'Bottoms',     share: 0.24, price: 68,  upt: 1.30, cover: 7,  amp: 0.04, peak: 36, conv: 1.00},
+  {name: 'Outerwear',   share: 0.12, price: 132, upt: 1.08, cover: 10, amp: 0.45, peak: 48, conv: 0.88},
+  {name: 'Accessories', share: 0.20, price: 22,  upt: 1.70, cover: 12, amp: 0.08, peak: 50, conv: 1.10},
+  {name: 'Footwear',    share: 0.14, price: 96,  upt: 1.12, cover: 9,  amp: 0.10, peak: 14, conv: 0.94}
+];
+var PROMO = {cat: 1, start: 21, end: 24, preStart: 13, preEnd: 20, lift: 0.18, discount: 0.08};
+var HOLIDAY = {47: 1.15, 48: 1.35, 49: 1.5, 50: 1.6, 51: 1.3, 52: 0.95};
+var BOOT_REPS = 2000;
+
+/* ---------- seeded random numbers ---------- */
+function mulberry32(a){
+  return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    var t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function gauss(rnd){ var u = 1 - rnd(), v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+function noise(rnd, sd){ return Math.exp(sd * gauss(rnd)); }
+
+/* ---------- data generation ---------- */
+function generate(seed){
+  var rnd = mulberry32(seed);
+  var regionF = REGIONS.map(function(){ return 0.9 + rnd() * 0.2; });
+  var stores = STORE_NAMES.map(function(name, i){
+    return {id: i, name: name, region: Math.floor(i / 3), size: 0.65 + rnd() * 0.9, conv: 0.17 + rnd() * 0.09,
+            priceF: 0.97 + rnd() * 0.06, uptF: 0.93 + rnd() * 0.15, buy: 0.9 + rnd() * 0.3, treated: false};
+  });
+  // pair stores by size, then put one of each pair in the promotion
+  var bySize = stores.slice().sort(function(a, b){ return a.size - b.size; });
+  for (var p = 0; p < bySize.length; p += 2) bySize[p + (rnd() < 0.5 ? 0 : 1)].treated = true;
+
+  function season(w){ return (1 + 0.06 * Math.sin(2 * Math.PI * (w - 10) / 52)) * (HOLIDAY[w] || 1) * (1 + 0.0015 * w); }
+  function catSeason(c, w){ return 1 + c.amp * Math.cos(2 * Math.PI * (w - c.peak) / 52); }
+  function inPromo(s, ci, w){ return s.treated && ci === PROMO.cat && w >= PROMO.start && w <= PROMO.end; }
+  // planned demand, used only for the replenishment order
+  function expected(s, ci, w){
+    var c = CATS[ci]; if (w > WEEKS) w = WEEKS;
+    return 5200 * s.size * regionF[s.region] * c.share * season(w) * catSeason(c, w) * s.conv * c.conv * c.upt * s.uptF *
+           (inPromo(s, ci, w) ? 1 + PROMO.lift : 1);
+  }
+
+  var rows = [];
+  stores.forEach(function(s){
+    var shock = []; for (var w = 1; w <= WEEKS; w++) shock[w] = noise(rnd, 0.03);
+    CATS.forEach(function(c, ci){
+      var onHand = Math.round(c.cover * s.buy * expected(s, ci, 1));
+      for (var w = 1; w <= WEEKS; w++){
+        var cs = catSeason(c, w), promo = inPromo(s, ci, w);
+        var traffic = Math.round(5200 * s.size * regionF[s.region] * c.share * season(w) * Math.sqrt(cs) * shock[w] * noise(rnd, 0.04));
+        var conv = s.conv * c.conv * Math.sqrt(cs) * noise(rnd, 0.03);
+        var upt = c.upt * s.uptF * noise(rnd, 0.02);
+        var price = c.price * s.priceF * (1 - (0.04 + 0.03 * rnd()));
+        var tx0 = Math.round(traffic * conv), units0 = Math.round(tx0 * upt);
+        var tx = promo ? Math.round(traffic * conv * (1 + PROMO.lift)) : tx0;
+        var units = promo ? Math.round(traffic * conv * (1 + PROMO.lift) * upt) : units0;
+        var received = Math.max(0, Math.round((c.cover * s.buy * expected(s, ci, w + 1) - (onHand - expected(s, ci, w))) * noise(rnd, 0.05)));
+        units = Math.min(units, onHand + received);
+        rows.push({s: s.id, c: ci, w: w, traffic: traffic, tx: tx, units: units,
+                   sales: units * price * (promo ? 1 - PROMO.discount : 1),
+                   onHand: onHand, received: received,
+                   units0: Math.min(units0, onHand + received), sales0: Math.min(units0, onHand + received) * price});
+        onHand = onHand + received - units;
+      }
+    });
+  });
+  return {seed: seed, stores: stores, rows: rows};
+}
+
+/* ---------- KPIs ---------- */
+function aggregate(rows, w0, w1){
+  var a = {traffic: 0, tx: 0, units: 0, sales: 0, received: 0, opening: 0, closing: 0, n: 0};
+  for (var i = 0; i < rows.length; i++){
+    var r = rows[i]; if (r.w < w0 || r.w > w1) continue;
+    a.n++; a.traffic += r.traffic; a.tx += r.tx; a.units += r.units; a.sales += r.sales; a.received += r.received;
+    if (r.w === w0) a.opening += r.onHand;
+    if (r.w === w1) a.closing += r.onHand + r.received - r.units;
+  }
+  var weeks = w1 - w0 + 1;
+  a.conv = a.tx / a.traffic;
+  a.atv = a.sales / a.tx;
+  a.upt = a.units / a.tx;
+  a.st = a.units / (a.opening + a.received);
+  a.wos = a.closing / (a.units / weeks);
+  return a;
+}
+
+/* ---------- difference-in-differences ---------- */
+// cells: one per store, {treated, before, during} = mean weekly value in each window
+function diffInDiff(cells){
+  function mean(treated, key){
+    var g = cells.filter(function(c){ return c.treated === treated; });
+    return g.reduce(function(sum, c){ return sum + c[key]; }, 0) / g.length;
+  }
+  var tBefore = mean(true, 'before'),  tDuring = mean(true, 'during');
+  var cBefore = mean(false, 'before'), cDuring = mean(false, 'during');
+  var did = (tDuring - tBefore) - (cDuring - cBefore);
+  var expected = tBefore + (cDuring - cBefore);   // promo stores without the promo
+  return {tBefore: tBefore, tDuring: tDuring, cBefore: cBefore, cDuring: cDuring,
+          did: did, expected: expected, lift: did / expected};
+}
+
+// 95% interval: resample stores inside each group, re-estimate, take percentiles
+function bootstrapLift(cells, reps, rnd){
+  var groups = [cells.filter(function(c){ return c.treated; }), cells.filter(function(c){ return !c.treated; })];
+  var lifts = [];
+  for (var i = 0; i < reps; i++){
+    var sample = [];
+    groups.forEach(function(g){ for (var j = 0; j < g.length; j++) sample.push(g[Math.floor(rnd() * g.length)]); });
+    lifts.push(diffInDiff(sample).lift);
+  }
+  lifts.sort(function(a, b){ return a - b; });
+  return [lifts[Math.floor(0.025 * reps)], lifts[Math.ceil(0.975 * reps) - 1]];
+}
+
+function storeCells(data, key){
+  var preN = PROMO.preEnd - PROMO.preStart + 1, durN = PROMO.end - PROMO.start + 1;
+  var cells = data.stores.map(function(s){ return {treated: s.treated, before: 0, during: 0}; });
+  data.rows.forEach(function(r){
+    if (r.c !== PROMO.cat) return;
+    if (r.w >= PROMO.preStart && r.w <= PROMO.preEnd) cells[r.s].before += r[key] / preN;
+    else if (r.w >= PROMO.start && r.w <= PROMO.end) cells[r.s].during += r[key] / durN;
+  });
+  return cells;
+}
+
+function analysePromo(data){
+  var cells = storeCells(data, 'units'), salesCells = storeCells(data, 'sales');
+  var units = diffInDiff(cells), sales = diffInDiff(salesCells);
+  var ci = bootstrapLift(cells, BOOT_REPS, mulberry32(data.seed + 7919));
+  var nT = cells.filter(function(c){ return c.treated; }).length;
+  var storeWeeks = nT * (PROMO.end - PROMO.start + 1);
+  var trueUnits = 0, trueSales = 0;
+  data.rows.forEach(function(r){ trueUnits += r.units - r.units0; trueSales += r.sales - r.sales0; });
+  return {units: units, sales: sales, ci: ci, nTreated: nT, nControl: cells.length - nT,
+          incUnits: units.did * storeWeeks, incSales: sales.did * storeWeeks,
+          trueUnits: trueUnits, trueSales: trueSales,
+          covers: ci[0] <= PROMO.lift && PROMO.lift <= ci[1]};
+}
+
+/* ---------- formatting ---------- */
+function fmtInt(v){ return Math.round(v).toLocaleString('en-US'); }
+function fmtMoney(v){
+  var a = Math.abs(v), sg = v < 0 ? '-' : '';
+  if (a >= 1e6) return sg + '$' + (a / 1e6).toFixed(2) + 'M';
+  if (a >= 1e4) return sg + '$' + (a / 1e3).toFixed(0) + 'K';
+  if (a >= 1e3) return sg + '$' + (a / 1e3).toFixed(1) + 'K';
+  return sg + '$' + a.toFixed(0);
+}
+function fmtPct(v, d){ return (v * 100).toFixed(d == null ? 1 : d) + '%'; }
+function fmtSigned(v, d){ return (v >= 0 ? '+' : '') + (v * 100).toFixed(d == null ? 1 : d) + '%'; }
+var KPIS = [
+  {key: 'sales', label: 'Net sales',             fmt: fmtMoney, delta: 'rel', good: 1},
+  {key: 'conv',  label: 'Conversion rate', short: 'Conversion', fmt: function(v){ return fmtPct(v, 1); }, delta: 'pts', good: 1},
+  {key: 'atv',   label: 'Average transaction value', short: 'Avg transaction', fmt: function(v){ return '$' + v.toFixed(2); }, delta: 'rel', good: 1},
+  {key: 'upt',   label: 'Units per transaction', short: 'Units per txn', fmt: function(v){ return v.toFixed(2); }, delta: 'rel', good: 1},
+  {key: 'st',    label: 'Sell-through',          fmt: function(v){ return fmtPct(v, 1); }, delta: 'pts', good: 1},
+  {key: 'wos',   label: 'Weeks of supply', short: 'Wks supply', fmt: function(v){ return v.toFixed(1) + ' wk'; }, delta: 'rel', good: 0}
+];
+function kpi(key){ return KPIS.filter(function(k){ return k.key === key; })[0]; }
+
+/* ---------- DOM helpers ---------- */
+function $(id){ return document.getElementById(id); }
+function el(tag, attrs, text){
+  var n = document.createElement(tag);
+  if (attrs) for (var k in attrs) n.setAttribute(k, attrs[k]);
+  if (text != null) n.textContent = text;
+  return n;
+}
+var SVGNS = 'http://www.w3.org/2000/svg';
+function svg(tag, attrs, text){
+  var n = document.createElementNS(SVGNS, tag);
+  if (attrs) for (var k in attrs) n.setAttribute(k, attrs[k]);
+  if (text != null) n.textContent = text;
+  return n;
+}
+function clear(n){ while (n.firstChild) n.removeChild(n.firstChild); }
+function niceTicks(min, max, n){
+  var span = max - min || 1, raw = span / n, mag = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10)), f = raw / mag;
+  var step = (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * mag;
+  var lo = Math.floor(min / step) * step, hi = Math.ceil(max / step) * step, t = [];
+  for (var v = lo; v <= hi + step / 2; v += step) t.push(Math.round(v / step) * step);
+  return t;
+}
+function placeTip(tip, host, x, y){
+  tip.hidden = false;
+  var w = tip.offsetWidth, h = tip.offsetHeight, W = host.clientWidth;
+  var left = x + 12; if (left + w > W) left = x - 12 - w; if (left < 0) left = 0;
+  var top = y - h - 10; if (top < 0) top = y + 14;
+  tip.style.left = left + 'px'; tip.style.top = top + 'px';
+}
+
+/* ---------- line chart (one or two series, optional shaded window) ---------- */
+// spec: {weeks:[..], series:[{name, cls, color, values:[..]}], fmt, axisFmt, zero, band:{w0,w1,label}, endLabels, readout, height}
+function drawLine(host, spec){
+  host._spec = spec;
+  var W = host.clientWidth; if (!W) return;
+  var narrow = W < 520, H = spec.height || (narrow ? 230 : 280);
+  var labels = spec.endLabels && !narrow;
+  var m = {t: 26, r: labels ? 104 : 12, b: 28, l: 46};
+  var pw = W - m.l - m.r, ph = H - m.t - m.b, n = spec.weeks.length;
+  var all = []; spec.series.forEach(function(s){ all = all.concat(s.values); });
+  var lo = spec.zero ? 0 : Math.min.apply(null, all), hi = Math.max.apply(null, all);
+  if (!spec.zero){ var pad = (hi - lo) * 0.12 || 1; lo -= pad; hi += pad; }
+  var ticks = niceTicks(lo, hi, narrow ? 3 : 4); lo = ticks[0]; hi = ticks[ticks.length - 1];
+  function X(i){ return m.l + (n === 1 ? pw / 2 : pw * i / (n - 1)); }
+  function Y(v){ return m.t + ph * (1 - (v - lo) / (hi - lo)); }
+  var half = n > 1 ? pw / (n - 1) / 2 : pw / 2;
+
+  var old = host.querySelector('svg'); if (old) host.removeChild(old);
+  var tip = host.querySelector('.tip'); if (!tip){ tip = el('div', {'class': 'tip', hidden: ''}); host.appendChild(tip); }
+  tip.hidden = true;
+  var root = svg('svg', {width: W, height: H, viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': spec.alt});
+  host.insertBefore(root, host.firstChild);
+
+  if (spec.band){
+    var i0 = spec.weeks.indexOf(Math.max(spec.band.w0, spec.weeks[0])), i1 = spec.weeks.indexOf(Math.min(spec.band.w1, spec.weeks[n - 1]));
+    if (spec.band.w1 >= spec.weeks[0] && spec.band.w0 <= spec.weeks[n - 1] && i0 >= 0 && i1 >= 0){
+      var bx0 = Math.max(m.l, X(i0) - half), bx1 = Math.min(m.l + pw, X(i1) + half);
+      root.appendChild(svg('rect', {'class': 'band', x: bx0, y: m.t, width: bx1 - bx0, height: ph}));
+      var lab = svg('text', {y: m.t - 8, 'text-anchor': 'middle'}, spec.band.label);
+      root.appendChild(lab);
+      var lw = lab.getComputedTextLength ? lab.getComputedTextLength() : 110;
+      lab.setAttribute('x', Math.min(Math.max((bx0 + bx1) / 2, m.l + lw / 2), W - 4 - lw / 2));
+    }
+  }
+  ticks.forEach(function(t){
+    root.appendChild(svg('line', {'class': 'gridline', x1: m.l, x2: m.l + pw, y1: Y(t), y2: Y(t)}));
+    root.appendChild(svg('text', {x: m.l - 8, y: Y(t) + 4, 'text-anchor': 'end'}, spec.axisFmt(t)));
+  });
+  var maxLabels = Math.max(2, Math.floor(pw / 52)), step = [1, 2, 4, 8, 13, 26].filter(function(s){ return n / s <= maxLabels; })[0] || 26;
+  spec.weeks.forEach(function(w, i){
+    if ((w - 1) % step === 0 || (step === 1) || (n <= 13 && i % step === 0))
+      if (!((n <= 13 && step > 1) && i % step !== 0))
+        root.appendChild(svg('text', {x: X(i), y: H - 8, 'text-anchor': i === 0 ? 'start' : (i === n - 1 && !labels) ? 'end' : 'middle'}, 'Wk ' + w));
+  });
+  spec.series.forEach(function(s){
+    var d = s.values.map(function(v, i){ return (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1); }).join('');
+    root.appendChild(svg('path', {d: d, fill: 'none', stroke: s.color, 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round'}));
+  });
+  if (labels){
+    var ends = spec.series.map(function(s){ return {s: s, y: Y(s.values[n - 1])}; }).sort(function(a, b){ return a.y - b.y; });
+    for (var k = 1; k < ends.length; k++) if (ends[k].y - ends[k - 1].y < 15) ends[k].y = ends[k - 1].y + 15;
+    ends.forEach(function(e){
+      root.appendChild(svg('circle', {'class': 'dot', cx: X(n - 1), cy: Y(e.s.values[n - 1]), r: 4, fill: e.s.color}));
+      root.appendChild(svg('text', {'class': 'strong', x: X(n - 1) + 10, y: e.y + 4}, e.s.name));
+    });
+  }
+  var cross = svg('line', {'class': 'cross', y1: m.t, y2: m.t + ph, visibility: 'hidden'});
+  root.appendChild(cross);
+  var dots = spec.series.map(function(s){ var c = svg('circle', {'class': 'dot', r: 5, fill: s.color, visibility: 'hidden'}); root.appendChild(c); return c; });
+
+  var readout = spec.readout ? $(spec.readout) : null;
+  function show(i){
+    host._i = i;
+    cross.setAttribute('x1', X(i)); cross.setAttribute('x2', X(i)); cross.setAttribute('visibility', 'visible');
+    clear(tip);
+    var inBand = spec.band && spec.weeks[i] >= spec.band.w0 && spec.weeks[i] <= spec.band.w1;
+    tip.appendChild(el('div', {'class': 't'}, 'Week ' + spec.weeks[i] + (inBand ? ', promo week' : '')));
+    var parts = [];
+    spec.series.forEach(function(s, k){
+      dots[k].setAttribute('cx', X(i)); dots[k].setAttribute('cy', Y(s.values[i])); dots[k].setAttribute('visibility', 'visible');
+      var r = el('div', {'class': 'r'});
+      r.appendChild(el('i', {'class': 'key' + (k ? ' k2' : '')}));
+      r.appendChild(el('b', null, spec.fmt(s.values[i])));
+      r.appendChild(el('span', null, s.name));
+      tip.appendChild(r);
+      parts.push(s.name + ' ' + spec.fmt(s.values[i]));
+    });
+    placeTip(tip, host, X(i), Math.min.apply(null, spec.series.map(function(s){ return Y(s.values[i]); })));
+    if (readout) readout.textContent = 'Week ' + spec.weeks[i] + (inBand ? ' (promo week)' : '') + ': ' + parts.join(', ');
+  }
+  function hide(){
+    host._i = null; tip.hidden = true; cross.setAttribute('visibility', 'hidden');
+    dots.forEach(function(d){ d.setAttribute('visibility', 'hidden'); });
+    if (readout) readout.textContent = spec.readoutIdle || '';
+  }
+  host._show = show; host._hide = hide; host._n = n;
+  host._at = function(clientX){
+    var x = clientX - host.getBoundingClientRect().left;
+    return Math.max(0, Math.min(n - 1, Math.round((x - m.l) / (pw / Math.max(1, n - 1)))));
+  };
+  if (readout) readout.textContent = spec.readoutIdle || '';
+  if (!host._wired){
+    host._wired = true;
+    host.addEventListener('pointermove', function(e){ host._show(host._at(e.clientX)); });
+    host.addEventListener('pointerdown', function(e){ host._show(host._at(e.clientX)); });
+    host.addEventListener('pointerleave', function(){ if (document.activeElement !== host) host._hide(); });
+    host.addEventListener('blur', function(){ host._hide(); });
+    host.addEventListener('keydown', function(e){
+      var i = host._i == null ? -1 : host._i, last = host._n - 1;
+      if (e.key === 'ArrowRight') i = Math.min(last, i + 1);
+      else if (e.key === 'ArrowLeft') i = Math.max(0, i < 0 ? last : i - 1);
+      else if (e.key === 'Home') i = 0;
+      else if (e.key === 'End') i = last;
+      else if (e.key === 'Escape'){ host._hide(); return; }
+      else return;
+      e.preventDefault(); host._show(i);
+    });
+  }
+}
+
+/* ---------- horizontal bar ranking ---------- */
+function drawBars(host, spec){
+  host._spec = spec;
+  var W = host.clientWidth; if (!W) return;
+  var rowH = 30, barH = 16, m = {t: 4, r: 66, b: 4, l: W < 420 ? 96 : 112};
+  var H = m.t + m.b + rowH * spec.items.length, pw = Math.max(20, W - m.l - m.r);
+  var max = Math.max.apply(null, spec.items.map(function(d){ return d.value; })) || 1;
+  clear(host);
+  var tip = el('div', {'class': 'tip', hidden: ''});
+  var root = svg('svg', {width: W, height: H, viewBox: '0 0 ' + W + ' ' + H, 'aria-hidden': 'true'});
+  host.appendChild(root); host.appendChild(tip);
+  host.setAttribute('aria-label', spec.alt);
+  root.appendChild(svg('line', {'class': 'gridline', x1: m.l, x2: m.l, y1: m.t, y2: H - m.b}));
+  spec.items.forEach(function(d, i){
+    var y = m.t + i * rowH, w = Math.max(2, pw * d.value / max), r = Math.min(4, w), by = y + (rowH - barH) / 2;
+    var g = svg('g', {'class': 'row' + (spec.selected != null && !d.selected ? ' dim' : '')});
+    g.appendChild(svg('text', {'class': d.selected ? 'strong' : 'val', x: m.l - 8, y: y + rowH / 2 + 4, 'text-anchor': 'end'}, d.label));
+    g.appendChild(svg('path', {'class': 'barmark', d: 'M' + m.l + ' ' + by + 'h' + (w - r) + 'a' + r + ' ' + r + ' 0 0 1 ' + r + ' ' + r +
+      'v' + (barH - 2 * r) + 'a' + r + ' ' + r + ' 0 0 1 -' + r + ' ' + r + 'h-' + (w - r) + 'z'}));
+    g.appendChild(svg('text', {'class': 'strong', x: m.l + w + 6, y: y + rowH / 2 + 4}, spec.fmt(d.value)));
+    var hit = svg('rect', {x: 0, y: y, width: W, height: rowH, fill: 'transparent'});
+    g.appendChild(hit); root.appendChild(g);
+    function show(){
+      clear(tip);
+      tip.appendChild(el('div', {'class': 't'}, d.label + ', ' + d.sub + ', rank ' + (i + 1) + ' of ' + spec.items.length));
+      var rr = el('div', {'class': 'r'}); rr.appendChild(el('b', null, spec.fmt(d.value))); rr.appendChild(el('span', null, spec.name)); tip.appendChild(rr);
+      placeTip(tip, host, m.l + w, y + 6); g.setAttribute('class', g.getAttribute('class').replace(' on', '') + ' on');
+    }
+    function hide(){ tip.hidden = true; g.setAttribute('class', g.getAttribute('class').replace(' on', '')); }
+    g.addEventListener('pointermove', show); g.addEventListener('pointerdown', show); g.addEventListener('pointerleave', hide);
+  });
+}
+
+/* ---------- state and rendering ---------- */
+var data, promo, sort = {key: 'sales', dir: -1};
+
+function periodRange(p){
+  if (p === 'last13') return [40, 52];
+  if (p === 'q1') return [1, 13];
+  if (p === 'q2') return [14, 26];
+  if (p === 'q3') return [27, 39];
+  if (p === 'q4') return [40, 52];
+  return [1, 52];
+}
+function periodName(p){ return $('f-period').options[$('f-period').selectedIndex].text.replace(/ \(.*/, '').toLowerCase(); }
+function filters(){
+  return {period: $('f-period').value, region: $('f-region').value, store: $('f-store').value, cat: $('f-cat').value};
+}
+function pick(f, opt){
+  opt = opt || {};
+  return data.rows.filter(function(r){
+    var s = data.stores[r.s];
+    if (!opt.anyRegion && f.region !== 'all' && s.region !== +f.region) return false;
+    if (!opt.anyStore && f.store !== 'all' && r.s !== +f.store) return false;
+    if (!opt.anyCat && f.cat !== 'all' && r.c !== +f.cat) return false;
+    return true;
+  });
+}
+function sliceName(f){
+  var where = f.store !== 'all' ? data.stores[+f.store].name : f.region !== 'all' ? REGIONS[+f.region] + ' region' : 'All stores';
+  return where + ', ' + (f.cat !== 'all' ? CATS[+f.cat].name : 'all categories');
+}
+
+function fillStoreOptions(){
+  var sel = $('f-store'), region = $('f-region').value, keep = sel.value;
+  clear(sel); sel.appendChild(el('option', {value: 'all'}, region === 'all' ? 'All stores' : 'All stores in region'));
+  data.stores.forEach(function(s){ if (region === 'all' || s.region === +region) sel.appendChild(el('option', {value: s.id}, s.name)); });
+  sel.value = keep; if (sel.selectedIndex < 0) sel.value = 'all';
+}
+
+function renderKpis(f, rng, rows){
+  var cur = aggregate(rows, rng[0], rng[1]), len = rng[1] - rng[0] + 1;
+  var prev = rng[0] - len >= 1 ? aggregate(rows, rng[0] - len, rng[0] - 1) : null;
+  var host = $('kpis'); clear(host);
+  KPIS.forEach(function(k){
+    var box = el('div', {'class': 'kpi'});
+    box.appendChild(el('div', {'class': 'l'}, k.label));
+    box.appendChild(el('div', {'class': 'v'}, k.fmt(cur[k.key])));
+    var d = el('div', {'class': 'd'});
+    if (!prev) d.textContent = 'No earlier period to compare';
+    else {
+      var diff = k.delta === 'pts' ? (cur[k.key] - prev[k.key]) * 100 : (cur[k.key] / prev[k.key] - 1) * 100;
+      var txt = (diff >= 0 ? '+' : '') + diff.toFixed(1) + (k.delta === 'pts' ? ' pts' : '%');
+      var flat = Math.abs(diff) < 0.05, up = diff > 0;
+      d.appendChild(el('span', {'class': 'ic ' + (flat || !k.good ? 'flat' : up ? 'up' : 'down'), 'aria-hidden': 'true'}, flat ? '●' : up ? '▲' : '▼'));
+      d.appendChild(document.createTextNode(txt + ' vs prior ' + len + ' weeks'));
+    }
+    box.appendChild(d); host.appendChild(box);
+  });
+  return cur;
+}
+
+function renderLine(f, rng, rows){
+  var weeks = [], vals = [];
+  for (var w = rng[0]; w <= rng[1]; w++){ weeks.push(w); vals.push(0); }
+  rows.forEach(function(r){ if (r.w >= rng[0] && r.w <= rng[1]) vals[r.w - rng[0]] += r.sales; });
+  var hiI = vals.indexOf(Math.max.apply(null, vals)), loI = vals.indexOf(Math.min.apply(null, vals));
+  var total = vals.reduce(function(a, b){ return a + b; }, 0);
+  var summary = 'Total ' + fmtMoney(total) + '. Highest week ' + weeks[hiI] + ' at ' + fmtMoney(vals[hiI]) + ', lowest week ' + weeks[loI] + ' at ' + fmtMoney(vals[loI]) + '.';
+  $('line-sub').textContent = sliceName(f) + ', weeks ' + rng[0] + ' to ' + rng[1] + '. The shaded weeks are the ' + CATS[PROMO.cat].name + ' promotion, which ran in ' + promo.nTreated + ' of ' + data.stores.length + ' stores.';
+  drawLine($('line-chart'), {
+    weeks: weeks, series: [{name: 'Net sales', color: 'var(--s1)', values: vals}], zero: true,
+    fmt: fmtMoney, axisFmt: fmtMoney, readout: 'line-readout', readoutIdle: summary,
+    band: {w0: PROMO.start, w1: PROMO.end, label: 'Promo, wk ' + PROMO.start + ' to ' + PROMO.end},
+    alt: 'Line chart of weekly net sales for ' + sliceName(f) + ', weeks ' + rng[0] + ' to ' + rng[1] + '. ' + summary
+  });
+  var t = $('line-table'); clear(t);
+  var hr = el('tr'); hr.appendChild(el('th', {scope: 'col'}, 'Week')); hr.appendChild(el('th', {scope: 'col', 'class': 'num'}, 'Net sales')); t.appendChild(hr);
+  weeks.forEach(function(w, i){
+    var tr = el('tr'); tr.appendChild(el('td', null, 'Week ' + w + (w >= PROMO.start && w <= PROMO.end ? ' (promo)' : '')));
+    tr.appendChild(el('td', {'class': 'num'}, '$' + fmtInt(vals[i]))); t.appendChild(tr);
+  });
+}
+
+function storeStats(f, rng){
+  var rows = pick(f, {anyStore: true}), by = {};
+  rows.forEach(function(r){ (by[r.s] = by[r.s] || []).push(r); });
+  return Object.keys(by).map(function(id){
+    var a = aggregate(by[id], rng[0], rng[1]); a.store = data.stores[+id]; return a;
+  });
+}
+
+function renderRank(f, rng, stats){
+  var k = kpi($('f-kpi').value);
+  var items = stats.slice().sort(function(a, b){ return b[k.key] - a[k.key]; }).map(function(a){
+    return {label: a.store.name, sub: REGIONS[a.store.region], value: a[k.key], selected: f.store !== 'all' && a.store.id === +f.store};
+  });
+  var scope = (f.region !== 'all' ? REGIONS[+f.region] + ' region' : 'All regions') + ', ' + (f.cat !== 'all' ? CATS[+f.cat].name : 'all categories');
+  $('rank-sub').textContent = scope + ', weeks ' + rng[0] + ' to ' + rng[1] + '.';
+  drawBars($('rank-chart'), {items: items, fmt: k.fmt, name: k.label, selected: f.store !== 'all' ? +f.store : null,
+    alt: 'Bar chart ranking ' + items.length + ' stores by ' + k.label.toLowerCase() + '. Highest: ' + items[0].label + ' at ' + k.fmt(items[0].value) +
+         '. Lowest: ' + items[items.length - 1].label + ' at ' + k.fmt(items[items.length - 1].value) + '. The store table below has every value.'});
+}
+
+function renderSellThrough(f, rng){
+  var rows = pick(f, {anyCat: true}), host = $('st-bars'); clear(host);
+  var where = f.store !== 'all' ? data.stores[+f.store].name : f.region !== 'all' ? REGIONS[+f.region] + ' region' : 'All stores';
+  $('st-sub').textContent = where + ', weeks ' + rng[0] + ' to ' + rng[1] + '. Units sold as a share of opening stock plus receipts.';
+  CATS.map(function(c, ci){
+    return {c: c, ci: ci, a: aggregate(rows.filter(function(r){ return r.c === ci; }), rng[0], rng[1])};
+  }).sort(function(a, b){ return b.a.st - a.a.st; }).forEach(function(d){
+    var row = el('div', {'class': 'st-row' + (f.cat !== 'all' && +f.cat !== d.ci ? ' dim' : '')});
+    row.appendChild(el('span', {'class': 'n'}, d.c.name));
+    var bar = el('div', {'class': 'bar', role: 'img', 'aria-label': d.c.name + ' sell-through ' + fmtPct(d.a.st, 1)});
+    var fill = el('i'); fill.style.width = Math.min(100, d.a.st * 100).toFixed(1) + '%'; bar.appendChild(fill);
+    row.appendChild(bar);
+    row.appendChild(el('span', {'class': 'p'}, fmtPct(d.a.st, 1)));
+    host.appendChild(row);
+  });
+}
+
+function renderTable(f, rng, stats){
+  var t = $('store-table'); clear(t);
+  $('table-sub').textContent = stats.length + ' stores, ' + (f.cat !== 'all' ? CATS[+f.cat].name : 'all categories') + ', weeks ' + rng[0] + ' to ' + rng[1] + '. Select a column heading to sort.';
+  var cols = [{key: 'name', label: 'Store'}, {key: 'region', label: 'Region'}].concat(KPIS.map(function(k){ return {key: k.key, label: k.short || k.label, k: k}; }));
+  var thead = el('thead'), hr = el('tr');
+  cols.forEach(function(c){
+    var th = el('th', {scope: 'col'}); if (c.k) th.className = 'num';
+    if (sort.key === c.key) th.setAttribute('aria-sort', sort.dir > 0 ? 'ascending' : 'descending');
+    var b = el('button', {type: 'button'}, c.label);
+    b.appendChild(el('span', {'class': 'arr', 'aria-hidden': 'true'}, sort.key === c.key ? (sort.dir > 0 ? '▲' : '▼') : ''));
+    b.addEventListener('click', function(){
+      sort = {key: c.key, dir: sort.key === c.key ? -sort.dir : (c.k ? -1 : 1)};
+      render();
+      var again = $('store-table').querySelectorAll('th button')[cols.indexOf(c)]; if (again) again.focus();
+    });
+    th.appendChild(b); hr.appendChild(th);
+  });
+  thead.appendChild(hr); t.appendChild(thead);
+  function val(a){ return sort.key === 'name' ? a.store.name : sort.key === 'region' ? REGIONS[a.store.region] + a.store.name : a[sort.key]; }
+  var body = el('tbody');
+  stats.slice().sort(function(a, b){ var x = val(a), y = val(b); return (x < y ? -1 : x > y ? 1 : 0) * sort.dir; }).forEach(function(a){
+    var tr = el('tr'); if (f.store !== 'all' && a.store.id === +f.store) tr.className = 'sel';
+    var name = el('td', {'class': 'name'}, a.store.name);
+    if (a.store.treated) name.appendChild(el('span', {'class': 'tag'}, 'Promo'));
+    tr.appendChild(name); tr.appendChild(el('td', null, REGIONS[a.store.region]));
+    KPIS.forEach(function(k){ tr.appendChild(el('td', {'class': 'num'}, k.fmt(a[k.key]))); });
+    body.appendChild(tr);
+  });
+  t.appendChild(body);
+}
+
+function renderPromo(){
+  var c = CATS[PROMO.cat].name, u = promo.units, s = promo.sales;
+  var range = fmtPct(promo.ci[0], 1) + ' to ' + fmtPct(promo.ci[1], 1);
+  $('promo-sub').textContent = c + ' ran a ' + (PROMO.end - PROMO.start + 1) + '-week promotion (weeks ' + PROMO.start + ' to ' + PROMO.end + ') in ' + promo.nTreated +
+    ' stores. The other ' + promo.nControl + ' stores are the control group. This panel always uses all stores, so the filters above do not change it.';
+  $('promo-conclusion').textContent = 'I estimate the promotion lifted ' + c + ' units by ' + fmtPct(u.lift, 1) + ' (95% interval ' + range + '), which ' +
+    (promo.covers ? 'covers' : 'does not cover') + ' the ' + fmtPct(PROMO.lift, 0) + ' lift I built into the data.';
+  var nums = $('did-nums'); clear(nums);
+  [['Estimated lift in units', fmtSigned(u.lift, 1), '95% interval ' + range],
+   ['True lift built in', fmtSigned(PROMO.lift, 1), 'Estimate is off by ' + ((u.lift - PROMO.lift) * 100).toFixed(1) + ' pts'],
+   ['Incremental units', fmtInt(promo.incUnits), 'Actual built-in: ' + fmtInt(promo.trueUnits)],
+   ['Incremental net sales', fmtMoney(promo.incSales), 'Actual built-in: ' + fmtMoney(promo.trueSales) + ', after the ' + fmtPct(PROMO.discount, 0) + ' promo discount']
+  ].forEach(function(d){
+    var b = el('div', {'class': 'did-num'});
+    b.appendChild(el('div', {'class': 'l'}, d[0])); b.appendChild(el('div', {'class': 'v'}, d[1])); b.appendChild(el('div', {'class': 'x'}, d[2]));
+    nums.appendChild(b);
+  });
+
+  var t = $('did-table'); clear(t);
+  $('did-table-sub').textContent = 'Mean weekly ' + c + ' units per store, before (weeks ' + PROMO.preStart + ' to ' + PROMO.preEnd + ') and during the promotion (weeks ' + PROMO.start + ' to ' + PROMO.end + ').';
+  var head = el('tr');
+  [['Group', ''], ['Before', 'num'], ['During', 'num'], ['Change', 'num']]
+    .forEach(function(h){ head.appendChild(el('th', {scope: 'col', 'class': h[1]}, h[0])); });
+  t.appendChild(head);
+  function sgn(v){ return (v >= 0 ? '+' : '') + v.toFixed(1); }
+  [['Promo stores (' + promo.nTreated + ')', u.tBefore, u.tDuring], ['Control stores (' + promo.nControl + ')', u.cBefore, u.cDuring]].forEach(function(r){
+    var tr = el('tr'); tr.appendChild(el('th', {scope: 'row'}, r[0]));
+    tr.appendChild(el('td', {'class': 'num'}, r[1].toFixed(1))); tr.appendChild(el('td', {'class': 'num'}, r[2].toFixed(1)));
+    tr.appendChild(el('td', {'class': 'num'}, sgn(r[2] - r[1]))); t.appendChild(tr);
+  });
+  var tot = el('tr', {'class': 'total'});
+  var th = el('td', {colspan: 3}, 'Difference in differences'); tot.appendChild(th);
+  tot.appendChild(el('td', {'class': 'num'}, sgn(u.did))); t.appendChild(tot);
+
+  var weeks = [], tv = [], cv = [];
+  for (var w = PROMO.preStart; w <= PROMO.end; w++){ weeks.push(w); tv.push(0); cv.push(0); }
+  data.rows.forEach(function(r){
+    if (r.c !== PROMO.cat || r.w < PROMO.preStart || r.w > PROMO.end) return;
+    if (data.stores[r.s].treated) tv[r.w - PROMO.preStart] += r.units / promo.nTreated; else cv[r.w - PROMO.preStart] += r.units / promo.nControl;
+  });
+  $('did-chart-sub').textContent = 'Mean weekly ' + c + ' units per store. The two groups move together until the promotion starts.';
+  var idle = 'Promo stores go from ' + u.tBefore.toFixed(1) + ' to ' + u.tDuring.toFixed(1) + ' units a week. Control stores go from ' + u.cBefore.toFixed(1) + ' to ' + u.cDuring.toFixed(1) + '.';
+  drawLine($('did-chart'), {
+    weeks: weeks, series: [{name: 'Promo stores', color: 'var(--s1)', values: tv}, {name: 'Control stores', color: 'var(--s2)', values: cv}],
+    fmt: function(v){ return v.toFixed(1); }, axisFmt: function(v){ return fmtInt(v); }, zero: false, endLabels: true, height: 240,
+    band: {w0: PROMO.start, w1: PROMO.end, label: 'Promo weeks'}, readout: 'did-readout', readoutIdle: idle,
+    alt: 'Line chart of mean weekly ' + c + ' units per store for promo and control stores, weeks ' + PROMO.preStart + ' to ' + PROMO.end + '. ' + idle
+  });
+}
+
+function renderMetrics(){
+  $('m-rows').textContent = fmtInt(data.rows.length);
+  $('m-lift').textContent = fmtSigned(promo.units.lift, 1);
+  $('m-lift-l').textContent = 'Estimated promo lift in units (95% interval ' + fmtPct(promo.ci[0], 1) + ' to ' + fmtPct(promo.ci[1], 1) + ')';
+  $('m-true').textContent = fmtSigned(PROMO.lift, 1);
+  var by = {}; data.rows.forEach(function(r){ (by[r.s] = by[r.s] || []).push(r); });
+  var best = data.stores.map(function(s){ return {s: s, conv: aggregate(by[s.id], 1, WEEKS).conv}; }).sort(function(a, b){ return b.conv - a.conv; })[0];
+  $('m-best').textContent = best.s.name;
+  $('m-best-l').textContent = 'Best store by conversion, at ' + fmtPct(best.conv, 1) + ' over the full year';
+}
+
+function render(){
+  var f = filters(), rng = periodRange(f.period), rows = pick(f), stats = storeStats(f, rng);
+  renderKpis(f, rng, rows);
+  renderLine(f, rng, rows);
+  renderRank(f, rng, stats);
+  renderSellThrough(f, rng);
+  renderTable(f, rng, stats);
+}
+
+function run(){
+  var seed = parseInt($('seed').value, 10);
+  if (!(seed >= 1 && seed <= 999999)){ seed = DEFAULT_SEED; }
+  $('seed').value = seed;
+  var t0 = performance.now();
+  data = generate(seed);
+  promo = analysePromo(data);
+  fillStoreOptions();
+  render(); renderPromo(); renderMetrics();
+  $('status').textContent = 'Generated ' + fmtInt(data.rows.length) + ' rows from seed ' + seed + ' and ran the promotion analysis with ' +
+    fmtInt(BOOT_REPS) + ' resamples in ' + Math.max(1, Math.round(performance.now() - t0)) + ' ms.';
+}
+
+/* ---------- wiring ---------- */
+(function init(){
+  var r = $('f-region'); r.appendChild(el('option', {value: 'all'}, 'All regions'));
+  REGIONS.forEach(function(n, i){ r.appendChild(el('option', {value: i}, n)); });
+  var c = $('f-cat'); c.appendChild(el('option', {value: 'all'}, 'All categories'));
+  CATS.forEach(function(k, i){ c.appendChild(el('option', {value: i}, k.name)); });
+  KPIS.forEach(function(k){ $('f-kpi').appendChild(el('option', {value: k.key}, k.label)); });
+  $('code').textContent = diffInDiff.toString();
+
+  $('f-region').addEventListener('change', function(){ fillStoreOptions(); render(); });
+  ['f-period', 'f-store', 'f-cat', 'f-kpi'].forEach(function(id){ $(id).addEventListener('change', render); });
+  $('run').addEventListener('click', run);
+  $('seed').addEventListener('keydown', function(e){ if (e.key === 'Enter') run(); });
+  $('reset').addEventListener('click', function(){
+    $('seed').value = DEFAULT_SEED; $('f-period').value = 'full'; $('f-region').value = 'all'; $('f-cat').value = 'all'; $('f-kpi').value = 'sales';
+    sort = {key: 'sales', dir: -1};
+    data = generate(DEFAULT_SEED); fillStoreOptions(); $('f-store').value = 'all';
+    run();
+  });
+  run();
+
+  if (window.ResizeObserver){
+    var widths = new WeakMap();
+    var ro = new ResizeObserver(function(entries){
+      entries.forEach(function(e){
+        var h = e.target, w = Math.round(e.contentRect.width);
+        if (widths.get(h) === w || !h._spec) { widths.set(h, w); return; }
+        widths.set(h, w);
+        if (h.id === 'rank-chart') drawBars(h, h._spec); else drawLine(h, h._spec);
+      });
+    });
+    ['line-chart', 'did-chart', 'rank-chart'].forEach(function(id){ ro.observe($(id)); });
+  }
+})();
+})();
+</script>
+</body>
+</html>
